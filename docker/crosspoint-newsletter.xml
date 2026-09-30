@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <Container version="2">
   <Name>crosspoint-newsletter</Name>
-  <Repository>crosspoint-newsletter:latest</Repository>
-  <Registry/>
+  <Repository>ghcr.io/tisanina/crosspoint-newsletter:latest</Repository>
+  <Registry>https://github.com/tisanina/crosspoint-newsletter/pkgs/container/crosspoint-newsletter</Registry>
   <Network>bridge</Network>
   <MyIP/>
   <Shell>sh</Shell>
