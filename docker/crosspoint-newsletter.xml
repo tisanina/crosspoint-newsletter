@@ -7,7 +7,7 @@
   <MyIP/>
   <Shell>sh</Shell>
   <Privileged>false</Privileged>
-  <Support>https://github.com/tisanina/crosspoint-newsletter/issues</Support>
+  <Support>https://forums.unraid.net/topic/200752-support-crosspoint-newsletter-server/</Support>
   <Project>https://github.com/tisanina/crosspoint-newsletter</Project>
   <Overview>CrossPoint Newsletter Server — Server OPDS 1.2 autonomo e pipeline di conversione automatica da email a libri EPUB ottimizzati per lettori e-ink Waveshare ESP32-S3.</Overview>
   <Category>MediaApp:Books MediaServer:Book Productivity: Status:Stable</Category>
