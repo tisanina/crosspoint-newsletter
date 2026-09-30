@@ -1,0 +1,31 @@
+From: "La Settimana Nat" <newsletter@settimananat.example.com>
+To: reader@example.com
+Subject: La Settimana Nat #10 - Cose belle e cose brutte
+Date: Tue, 16 Sep 2026 10:00:00 +0200
+Message-ID: <nat-issue-010@settimananat.example.com>
+MIME-Version: 1.0
+Content-Type: multipart/related; boundary="BOUNDARY_RELATED_123"
+
+--BOUNDARY_RELATED_123
+Content-Type: text/html; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+
+<!DOCTYPE html>
+<html>
+<body>
+  <h2>La Settimana Nat</h2>
+  <p>Un editoriale illustrato sulle stranezze dell'estate.</p>
+  <p><img src="cid:vignetta01" alt="Vignetta"></p>
+</body>
+</html>
+
+--BOUNDARY_RELATED_123
+Content-Type: image/png
+Content-Transfer-Encoding: base64
+Content-ID: <vignetta01>
+Content-Disposition: inline; filename="vignetta.png"
+
+iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9
+awAAAABJRU5ErkJggg==
+
+--BOUNDARY_RELATED_123--

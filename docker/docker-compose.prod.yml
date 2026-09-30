@@ -1,0 +1,44 @@
+services:
+  newsletter:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    image: crosspoint-newsletter:latest
+    container_name: crosspoint-newsletter
+    restart: unless-stopped
+    ports:
+      # Porta principale WebUI & OPDS (personalizzabile in .env.prod)
+      - "${HOST_PORT:-8400}:8400"
+      # Porta secondaria opzionale per compatibilità reader (personalizzabile in .env.prod)
+      - "${HOST_OPDS_PORT:-8080}:8400"
+    volumes:
+      # Volume 1: CACHE (SSD / Appdata) -> configurazioni, DB SQLite, stato runtime
+      - "${UNRAID_CONF_DIR:-/mnt/user/appdata/crosspoint-newsletter}:/app/conf"
+      # Volume 2: RAID (Array Unraid) -> archivio libri EPUB, raw email (.eml), copertine
+      - "${UNRAID_DATA_DIR:-/mnt/user/data/crosspoint-newsletter}:/app/data"
+    environment:
+      - TZ=${TZ:-Europe/Rome}
+      - CN_TIMEZONE=${CN_TIMEZONE:-Europe/Rome}
+      - CN_CONF_DIR=/app/conf
+      - CN_DATA_DIR=/app/data
+      - CN_DB_PATH=/app/conf/newsletter.db
+      - CN_EPUB_DIR=/app/data/epub
+      - CN_RAW_DIR=/app/data/raw
+      - CN_COVERS_DIR=/app/data/covers
+      - CN_OPDS_HOST=0.0.0.0
+      - CN_OPDS_PORT=8400
+    env_file:
+      - ../.env.prod
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8400/api/status')\" || exit 1"]
+      interval: 30m
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    mem_limit: 512m
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+

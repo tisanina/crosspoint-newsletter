@@ -1,0 +1,23 @@
+services:
+  newsletter:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: crosspoint-newsletter
+    restart: unless-stopped
+    ports:
+      - "${CN_OPDS_PORT:-8400}:8400"
+    volumes:
+      - newsletter-data:/app/data
+    env_file:
+      - ../.env
+    mem_limit: 512m
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  newsletter-data:
+    driver: local

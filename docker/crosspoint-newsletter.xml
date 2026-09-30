@@ -1,0 +1,46 @@
+<?xml version="1.0"?>
+<Container version="2">
+  <Name>crosspoint-newsletter</Name>
+  <Repository>crosspoint-newsletter:latest</Repository>
+  <Registry/>
+  <Network>bridge</Network>
+  <MyIP/>
+  <Shell>sh</Shell>
+  <Privileged>false</Privileged>
+  <Support>https://github.com/tisanina/crosspoint-newsletter/issues</Support>
+  <Project>https://github.com/tisanina/crosspoint-newsletter</Project>
+  <Overview>CrossPoint Newsletter Server — Server OPDS 1.2 autonomo e pipeline di conversione automatica da email a libri EPUB ottimizzati per lettori e-ink Waveshare ESP32-S3.</Overview>
+  <Category>MediaApp:Books MediaServer:Book Productivity: Status:Stable</Category>
+  <WebUI>http://[IP]:[PORT:8400]/ui/</WebUI>
+  <TemplateURL/>
+  <Icon>https://raw.githubusercontent.com/walkxcode/dashboard-icons/main/png/calibre-web.png</Icon>
+  <ExtraParams>--restart unless-stopped</ExtraParams>
+  <PostArgs/>
+  <CPUset/>
+  <DateInstalled/>
+  <DonateText/>
+  <DonateLink/>
+  <Description>Server autonomo per la ricezione via IMAP di newsletter, conversione automatica e retroattiva in EPUB, sanitizzazione HTML, ridimensionamento immagini per display e-paper e distribuzione via catalogo OPDS 1.2.</Description>
+  
+  <!-- Porte -->
+  <Config Name="WebUI &amp; OPDS Port" Target="8400" Default="8400" Mode="tcp" Description="Porta principale per la WebUI di gestione e il catalogo OPDS" Type="Port" Display="always" Required="true" Mask="false">8400</Config>
+
+  <!-- Volumi (Cache vs RAID) -->
+  <Config Name="Volume Config &amp; DB (Cache SSD)" Target="/app/conf" Default="/mnt/user/appdata/crosspoint-newsletter" Mode="rw" Description="Volume su Cache SSD: database SQLite newsletter.db, credenziali e configurazione" Type="Path" Display="always" Required="true" Mask="false">/mnt/user/appdata/crosspoint-newsletter</Config>
+  <Config Name="Volume Data (RAID Array)" Target="/app/data" Default="/mnt/user/data/crosspoint-newsletter" Mode="rw" Description="Volume su Array RAID: archivio libri EPUB, raw email (.eml) e copertine" Type="Path" Display="always" Required="true" Mask="false">/mnt/user/data/crosspoint-newsletter</Config>
+
+  <!-- Variabili Ambiente -->
+  <Config Name="IMAP Host" Target="CN_IMAP_HOST" Default="imap.gmail.com" Mode="" Description="Server IMAP della casella di posta (es. imap.gmail.com)" Type="Variable" Display="always" Required="true" Mask="false">imap.gmail.com</Config>
+  <Config Name="IMAP Port" Target="CN_IMAP_PORT" Default="993" Mode="" Description="Porta SSL IMAP (default: 993)" Type="Variable" Display="always" Required="true" Mask="false">993</Config>
+  <Config Name="IMAP User" Target="CN_IMAP_USER" Default="" Mode="" Description="Indirizzo email su cui ricevi le newsletter" Type="Variable" Display="always" Required="true" Mask="false"></Config>
+  <Config Name="IMAP Password" Target="CN_IMAP_PASSWORD" Default="" Mode="" Description="Password per le app di Gmail (16 caratteri)" Type="Variable" Display="always" Required="true" Mask="true"></Config>
+  <Config Name="IMAP Folder" Target="CN_IMAP_FOLDER" Default="INBOX" Mode="" Description="Cartella da monitorare (default: INBOX)" Type="Variable" Display="advanced" Required="false" Mask="false">INBOX</Config>
+  
+  <Config Name="Auto-Polling Abilitato" Target="CN_ENABLE_AUTO_POLL" Default="true" Mode="" Description="Esegue il controllo periodico della posta in background" Type="Variable" Display="always" Required="false" Mask="false">true</Config>
+  <Config Name="Intervallo Polling (minuti)" Target="CN_POLL_INTERVAL_MINUTES" Default="15" Mode="" Description="Intervallo in minuti tra un controllo e l'altro (default: 15)" Type="Variable" Display="always" Required="false" Mask="false">15</Config>
+  <Config Name="Salva Email Originali (Raw)" Target="CN_KEEP_RAW" Default="true" Mode="" Description="Conserva i file originali .eml su RAID per triage o rielaborazione" Type="Variable" Display="advanced" Required="false" Mask="false">true</Config>
+  <Config Name="Timezone" Target="TZ" Default="Europe/Rome" Mode="" Description="Fuso orario del container (default: Europe/Rome)" Type="Variable" Display="advanced" Required="false" Mask="false">Europe/Rome</Config>
+
+  <Config Name="PUID" Target="PUID" Default="99" Mode="" Description="User ID Unraid (default: 99 nobody)" Type="Variable" Display="advanced" Required="false" Mask="false">99</Config>
+  <Config Name="PGID" Target="PGID" Default="100" Mode="" Description="Group ID Unraid (default: 100 users)" Type="Variable" Display="advanced" Required="false" Mask="false">100</Config>
+</Container>

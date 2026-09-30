@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+
+{% block title %}Impostazioni & Diagnostica — CrossPoint{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">Impostazioni & Connessioni</h1>
+</div>
+
+{% if message %}
+<div class="callout" style="border-left-color: var(--success); background: rgba(16, 185, 129, 0.08);">
+  <p style="color: #6ee7b7;">{{ message }}</p>
+</div>
+{% endif %}
+{% if error %}
+<div class="callout" style="border-left-color: var(--danger); background: rgba(239, 68, 68, 0.08);">
+  <p style="color: #fca5a5;">{{ error }}</p>
+</div>
+{% endif %}
+
+{% if test_result is defined %}
+<div class="callout" style="border-left-color: {% if test_result.success %}var(--success){% else %}var(--danger){% endif %}; background: {% if test_result.success %}rgba(16, 185, 129, 0.08){% else %}rgba(239, 68, 68, 0.08){% endif %};">
+  <h4 style="margin-bottom: 0.25rem; color: #fff;">Esito Test Connessione IMAP</h4>
+  <p style="color: {% if test_result.success %}#6ee7b7{% else %}#fca5a5{% endif %};">{{ test_result.message }}</p>
+</div>
+{% endif %}
+
+<div class="card" style="margin-bottom: 2rem;">
+  <div class="card-header">
+    <span>Configurazione IMAP (Ingestione Email)</span>
+    <div>
+      {% if imap_config.host and imap_config.user and imap_config.password_set %}
+      <span class="badge badge-enabled">Credenziali Presenti</span>
+      {% else %}
+      <span class="badge badge-disabled">Non Configurato</span>
+      {% endif %}
+    </div>
+  </div>
+
+  <form action="/ui/settings/imap/save" method="POST">
+    <div class="form-row">
+      <div class="form-group" style="flex: 2;">
+        <label for="host">Server Host IMAP *</label>
+        <input type="text" id="host" name="host" value="{{ imap_config.host or '' }}" placeholder="es. imap.gmail.com" required>
+      </div>
+      <div class="form-group" style="flex: 1;">
+        <label for="port">Porta SSL *</label>
+        <input type="number" id="port" name="port" value="{{ imap_config.port or 993 }}" required>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label for="user">Account Email / Utente *</label>
+        <input type="text" id="user" name="user" value="{{ imap_config.user or '' }}" placeholder="es. newsletter@esempio.it" required>
+      </div>
+      <div class="form-group">
+        <label for="password">
+          Password {% if imap_config.password_set %}<span style="color: var(--text-secondary); font-weight: 400;">(già salvata: lascia vuoto per non cambiarla)</span>{% else %}*{% endif %}
+        </label>
+        <input type="password" id="password" name="password" placeholder="{% if imap_config.password_set %}•••••••••••• (invariata){% else %}Password o App Password{% endif %}">
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="folder">Cartella IMAP</label>
+      <input type="text" id="folder" name="folder" value="{{ imap_config.folder or 'INBOX' }}" placeholder="INBOX" style="max-width: 300px;">
+    </div>
+
+    <div style="display: flex; gap: 0.75rem; align-items: center; margin-top: 1.5rem;">
+      <button type="submit" class="btn btn-primary">
+        💾 Salva Configurazione IMAP
+      </button>
+      <button type="submit" formaction="/ui/settings/imap/test" class="btn btn-secondary">
+        ⚡ Prova Connessione Ora
+      </button>
+    </div>
+  </form>
+
+  <p style="margin-top: 1.25rem; font-size: 0.8rem; color: var(--text-secondary);">
+    💡 I dati vengono salvati localmente nel file protetto <code>.env</code> e hanno effetto immediato sul server. Per account Google/Gmail o Microsoft, utilizza una <em>App Password</em> (password specifica per le app).
+  </p>
+</div>
+
+<div class="card" style="margin-bottom: 2rem;">
+  <div class="card-header">
+    <span>Fuso Orario & Localizzazione (Timezone)</span>
+    <span class="badge badge-enabled">{{ timezone_config.current if timezone_config else 'Europe/Rome' }}</span>
+  </div>
+
+  <form action="/ui/settings/timezone/save" method="POST">
+    <div class="form-row" style="align-items: flex-end;">
+      <div class="form-group" style="flex: 2; margin-bottom: 0;">
+        <label for="timezone">Fuso Orario IANA *</label>
+        <input type="text" id="timezone" name="timezone" list="tz-list" value="{{ timezone_config.current if timezone_config else 'Europe/Rome' }}" placeholder="es. Europe/Rome" required>
+        <datalist id="tz-list">
+          <option value="Europe/Rome">Europe/Rome (Italia)</option>
+          <option value="UTC">UTC (Tempo Coordinato Universale)</option>
+          <option value="Europe/London">Europe/London (UK)</option>
+          <option value="Europe/Paris">Europe/Paris (Francia)</option>
+          <option value="Europe/Berlin">Europe/Berlin (Germania)</option>
+          <option value="Europe/Madrid">Europe/Madrid (Spagna)</option>
+          <option value="Europe/Zurich">Europe/Zurich (Svizzera)</option>
+          <option value="America/New_York">America/New_York (US East)</option>
+          <option value="America/Chicago">America/Chicago (US Central)</option>
+          <option value="America/Los_Angeles">America/Los_Angeles (US Pacific)</option>
+          <option value="Asia/Tokyo">Asia/Tokyo (Giappone)</option>
+        </datalist>
+      </div>
+      <div class="form-group" style="margin-bottom: 0;">
+        <button type="submit" class="btn btn-primary">
+          💾 Salva Fuso Orario
+        </button>
+      </div>
+    </div>
+  </form>
+
+  <div style="margin-top: 1rem; font-size: 0.85rem; color: var(--text-secondary); display: flex; align-items: center; gap: 0.5rem;">
+    <span>🕒 Ora corrente calcolata dal server:</span>
+    <strong style="color: #fff;">{{ timezone_config.current_time if timezone_config else '-' }}</strong>
+  </div>
+
+  <p style="margin-top: 0.75rem; font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0;">
+    💡 Modificando il fuso orario, tutti gli orari visualizzati nella WebUI e nei log verranno calcolati in base a questo fuso. La preferenza viene memorizzata in modo permanente.
+  </p>
+</div>
+
+<div class="card" style="margin-bottom: 2rem;">
+  <div class="card-header">
+    <span>Configurazione Server OPDS 1.2 (Distribuzione E-Reader)</span>
+  </div>
+
+  <table style="width: 100%;">
+    <tbody>
+      <tr>
+        <td style="width: 220px; color: var(--text-secondary);">Indirizzo Binding / Host</td>
+        <td><code>{{ opds_config.host }}</code></td>
+      </tr>
+      <tr>
+        <td style="color: var(--text-secondary);">Porta HTTP</td>
+        <td><code>{{ opds_config.port }}</code></td>
+      </tr>
+      <tr>
+        <td style="color: var(--text-secondary);">URL Catalogo Root</td>
+        <td><code>http://{{ host_ip }}:{{ opds_config.port }}/opds</code></td>
+      </tr>
+      <tr>
+        <td style="color: var(--text-secondary);">Autenticazione Basic Auth</td>
+        <td>
+          {% if opds_config.auth_enabled %}
+          <span class="badge badge-enabled">Attiva</span> (Utente: <code>{{ opds_config.username }}</code>)
+          {% else %}
+          <span class="badge badge-disabled">Disattivata</span> (Accesso libero per LAN)
+          {% endif %}
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <span>Storage & Cartelle Dati</span>
+  </div>
+
+  <table style="width: 100%;">
+    <tbody>
+      <tr>
+        <td style="width: 220px; color: var(--text-secondary);">Cartella Dati (CN_DATA_DIR)</td>
+        <td><code>{{ storage_config.data_dir }}</code></td>
+      </tr>
+      <tr>
+        <td style="color: var(--text-secondary);">Database SQLite</td>
+        <td><code>{{ storage_config.db_path }}</code></td>
+      </tr>
+      <tr>
+        <td style="color: var(--text-secondary);">Archivio EPUB</td>
+        <td><code>{{ storage_config.epub_dir }}</code> ({{ storage_config.total_files }} file)</td>
+      </tr>
+      <tr>
+        <td style="color: var(--text-secondary);">Conservazione Email Raw</td>
+        <td><code>{{ 'Attiva (CN_KEEP_RAW=true)' if storage_config.keep_raw else 'Disattivata' }}</code></td>
+      </tr>
+      <tr>
+        <td style="color: var(--text-secondary);">Spazio Totale Occupato</td>
+        <td><strong>{{ storage_config.total_bytes_str }}</strong></td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+{% endblock %}

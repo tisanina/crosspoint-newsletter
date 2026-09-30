@@ -1,0 +1,52 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Environment / Secrets — NEVER commit
+.env
+.env.prod
+.env.local
+
+# Application data (persistent volumes)
+data/
+conf/
+
+# Docker
+docker/.env
+
+# Test / Coverage
+.coverage
+htmlcov/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Internal docs (kept locally, not published to GitHub)
+docs/E2E_TEST_REPORT.md
+docs/MANUAL_TEST_TRANSFORM.md
+docs/REQUIREMENTS.md
+docs/UNRAID_DEPLOY.md
+docs/INGEST.md
+docs/TRANSFORM.md
+RELEASE_PLAN*.md

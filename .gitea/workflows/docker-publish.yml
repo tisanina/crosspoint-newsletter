@@ -1,0 +1,31 @@
+name: Build Docker Image on Tower
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'screen/**'
+      - '.gitignore'
+
+jobs:
+  build-docker-image:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Build Docker Image
+        run: |
+          docker build \
+            -f docker/Dockerfile \
+            -t crosspoint-newsletter:latest \
+            -t crosspoint-newsletter:${{ gitea.sha }} \
+            .
+
+      - name: Verify Image
+        run: |
+          docker images | grep crosspoint-newsletter
+          docker run --rm crosspoint-newsletter:latest cn --version || true

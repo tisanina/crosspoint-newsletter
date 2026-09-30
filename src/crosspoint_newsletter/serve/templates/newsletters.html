@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+
+{% block title %}Gestione Newsletter — CrossPoint{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">Pubblicazioni Newsletter</h1>
+</div>
+
+{% if message %}
+<div class="callout" style="border-left-color: var(--success); background: rgba(16, 185, 129, 0.08);">
+  <p style="color: #6ee7b7;">{{ message }}</p>
+</div>
+{% endif %}
+{% if error %}
+<div class="callout" style="border-left-color: var(--danger); background: rgba(239, 68, 68, 0.08);">
+  <p style="color: #fca5a5;">{{ error }}</p>
+</div>
+{% endif %}
+
+<div class="card" style="margin-bottom: 2rem;">
+  <div class="card-header">
+    <span>Pubblicazioni Registrate ({{ newsletters|length }})</span>
+  </div>
+  
+  <div class="table-responsive">
+    <table>
+      <thead>
+        <tr>
+          <th>Nome</th>
+          <th>Slug</th>
+          <th>Mittente Riconosciuto</th>
+          <th>Numeri</th>
+          <th>Retention</th>
+          <th>Stato</th>
+          <th>Azioni</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for nl in newsletters %}
+        <tr>
+          <td><strong>{{ nl.name }}</strong></td>
+          <td><code>{{ nl.slug }}</code></td>
+          <td>{{ nl.sender_email }}</td>
+          <td>{{ nl.done_issues }}/{{ nl.total_issues }}</td>
+          <td>
+            {% if nl.retention_max_issues %}max {{ nl.retention_max_issues }} num.{% endif %}
+            {% if nl.retention_max_age_days %}{{ nl.retention_max_age_days }} gg.{% endif %}
+            {% if not nl.retention_max_issues and not nl.retention_max_age_days %}illimitata{% endif %}
+          </td>
+          <td>
+            <span class="badge badge-{{ 'enabled' if nl.enabled else 'disabled' }}">
+              {{ 'Attiva' if nl.enabled else 'Disattivata' }}
+            </span>
+          </td>
+          <td>
+            <div style="display: flex; gap: 0.4rem;">
+              <button type="button" class="btn btn-secondary btn-sm" onclick="document.getElementById('modal-edit-{{ nl.id }}').showModal()" title="Modifica retention e impostazioni">
+                Modifica
+              </button>
+              <form action="/ui/newsletters/{{ nl.id }}/toggle" method="POST" style="display:inline;">
+                <button type="submit" class="btn btn-secondary btn-sm">
+                  {{ 'Disattiva' if nl.enabled else 'Attiva' }}
+                </button>
+              </form>
+              <form action="/ui/newsletters/{{ nl.id }}/delete" method="POST" style="display:inline;" onsubmit="return confirm('Confermi eliminazione di {{ nl.name }} e di tutti gli EPUB associati?');">
+                <button type="submit" class="btn btn-danger btn-sm">Elimina</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="7" style="text-align: center; color: var(--text-secondary); padding: 2rem;">
+            Nessuna newsletter registrata. Aggiungine una con il modulo sottostante.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% for nl in newsletters %}
+<dialog id="modal-edit-{{ nl.id }}" class="modal-dialog">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 style="margin: 0; font-size: 1.15rem; color: #fff;">⚙️ Modifica Newsletter &amp; Retention</h3>
+      <button type="button" class="btn-close" onclick="document.getElementById('modal-edit-{{ nl.id }}').close()">&times;</button>
+    </div>
+    
+    <form action="/ui/newsletters/{{ nl.id }}/edit" method="POST" style="margin-top: 1.25rem;">
+      <div class="form-group">
+        <label for="edit_name_{{ nl.id }}">Nome Pubblicazione *</label>
+        <input type="text" id="edit_name_{{ nl.id }}" name="name" value="{{ nl.name }}" required>
+      </div>
+
+      <div class="form-group">
+        <label for="edit_sender_{{ nl.id }}">Email Mittente Riconosciuto *</label>
+        <input type="email" id="edit_sender_{{ nl.id }}" name="sender_email" value="{{ nl.sender_email }}" required>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="edit_max_issues_{{ nl.id }}">Max Numeri Conservati</label>
+          <input type="number" id="edit_max_issues_{{ nl.id }}" name="max_issues" min="0" value="{{ nl.retention_max_issues or '' }}" placeholder="Es. 30 (vuoto = illimitato)">
+          <small style="color: var(--text-secondary); font-size: 0.75rem; display: block; margin-top: 0.25rem;">Conserva solo i più recenti N numeri.</small>
+        </div>
+
+        <div class="form-group">
+          <label for="edit_max_age_days_{{ nl.id }}">Max Età in Giorni</label>
+          <input type="number" id="edit_max_age_days_{{ nl.id }}" name="max_age_days" min="0" value="{{ nl.retention_max_age_days or '' }}" placeholder="Es. 90 (vuoto = illimitato)">
+          <small style="color: var(--text-secondary); font-size: 0.75rem; display: block; margin-top: 0.25rem;">Elimina numeri più vecchi di N giorni.</small>
+        </div>
+      </div>
+
+      <div class="form-group" style="margin-top: 0.5rem; margin-bottom: 1.5rem; background: rgba(255, 255, 255, 0.03); padding: 0.75rem; border-radius: 6px; border: 1px solid var(--border-color);">
+        <label style="display: flex; align-items: center; gap: 0.6rem; cursor: pointer; color: var(--text-primary); margin: 0;">
+          <input type="checkbox" name="apply_retention_now" value="true" style="width: auto; margin: 0;">
+          <span>🧹 <strong>Applica subito la pulizia retention</strong> (elimina subito uscite eccedenti)</span>
+        </label>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 0.75rem;">
+        <button type="button" class="btn btn-secondary" onclick="document.getElementById('modal-edit-{{ nl.id }}').close()">Annulla</button>
+        <button type="submit" class="btn btn-primary">Salva Modifiche</button>
+      </div>
+    </form>
+  </div>
+</dialog>
+{% endfor %}
+
+<script>
+document.querySelectorAll('dialog.modal-dialog').forEach(dialog => {
+  dialog.addEventListener('click', (e) => {
+    const rect = dialog.getBoundingClientRect();
+    if (
+      e.clientX < rect.left ||
+      e.clientX > rect.right ||
+      e.clientY < rect.top ||
+      e.clientY > rect.bottom
+    ) {
+      dialog.close();
+    }
+  });
+});
+</script>
+
+<div class="card">
+  <div class="card-header">
+    <span>Registra Nuova Newsletter</span>
+  </div>
+  
+  <form action="/ui/newsletters/add" method="POST">
+    <div class="form-row">
+      <div class="form-group">
+        <label for="name">Nome Pubblicazione *</label>
+        <input type="text" id="name" name="name" required placeholder="Es. The Bull">
+      </div>
+      
+      <div class="form-group">
+        <label for="sender_email">Email Mittente *</label>
+        <input type="email" id="sender_email" name="sender_email" required placeholder="Es. newsletter@thebull.com">
+      </div>
+    </div>
+    
+    <div class="form-row">
+      <div class="form-group">
+        <label for="slug">Slug URL (opzionale)</label>
+        <input type="text" id="slug" name="slug" placeholder="Es. the-bull (lascia vuoto per calcolo automatico)">
+      </div>
+      
+      <div class="form-group">
+        <label for="max_issues">Retention: Max Numeri da Conservare</label>
+        <input type="number" id="max_issues" name="max_issues" min="1" placeholder="Es. 30 (lascia vuoto per illimitato)">
+      </div>
+      
+      <div class="form-group">
+        <label for="max_age_days">Retention: Max Età in Giorni</label>
+        <input type="number" id="max_age_days" name="max_age_days" min="1" placeholder="Es. 90 (lascia vuoto per illimitato)">
+      </div>
+    </div>
+    
+    <button type="submit" class="btn btn-primary">+ Salva Newsletter</button>
+  </form>
+</div>
+{% endblock %}

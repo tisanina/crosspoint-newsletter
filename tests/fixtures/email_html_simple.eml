@@ -1,0 +1,18 @@
+From: "The Bull" <newsletter@thebull.example.com>
+To: reader@example.com
+Subject: The Bull #1 - Mercati e tassi
+Date: Mon, 15 Sep 2026 08:30:00 +0200
+Message-ID: <bull-issue-001@thebull.example.com>
+MIME-Version: 1.0
+Content-Type: text/html; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+
+<!DOCTYPE html>
+<html>
+<head><title>The Bull #1</title></head>
+<body>
+  <h1>The Bull - Edizione del Mattino</h1>
+  <p>I mercati aprono in rialzo dopo le dichiarazioni sui tassi di interesse.</p>
+  <p>L'inflazione mostra segnali di stabilizzazione in tutta l'Eurozona.</p>
+</body>
+</html>

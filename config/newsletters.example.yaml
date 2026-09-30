@@ -1,0 +1,45 @@
+# ============================================================
+# Newsletter Sources Configuration
+# ============================================================
+# Copy this file to newsletters.yaml and customize with your
+# real newsletter sender addresses.
+#
+# Each entry defines a newsletter "series". Incoming emails are
+# matched to a series primarily by sender_email. Optional
+# sender_rules provide fallback matching on subject or headers.
+#
+# Retention is unlimited by default (null). Set max_issues or
+# max_age_days to enable automatic cleanup.
+# ============================================================
+
+newsletters:
+  - name: "The Bull"
+    sender: "newsletter@thebull.example.com"
+    enabled: true
+    retention:
+      max_issues: null       # null = unlimited (default)
+      max_age_days: null     # null = unlimited (default)
+
+  - name: "La Settimana Nat"
+    sender: "newsletter@settimananat.example.com"
+    enabled: true
+    retention:
+      max_issues: null
+      max_age_days: null
+
+  - name: "Storto"
+    sender: "storto@substack.example.com"
+    enabled: true
+    sender_rules:
+      - type: "header_from_contains"
+        value: "substack"
+    retention:
+      max_issues: null
+      max_age_days: null
+
+  - name: "Gameromancer"
+    sender: "newsletter@gameromancer.example.com"
+    enabled: true
+    retention:
+      max_issues: null
+      max_age_days: null

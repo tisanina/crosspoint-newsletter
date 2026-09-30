@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard — CrossPoint Newsletter{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <h1 class="page-title">Panoramica del Sistema</h1>
+  <div style="display: flex; gap: 0.6rem; align-items: center;">
+    <form action="/ui/poll/trigger" method="POST" style="display: inline;">
+      <button type="submit" class="btn btn-secondary" {% if polling and polling.is_polling %}disabled{% endif %}>
+        ⚡ {{ 'Controllo in corso...' if polling and polling.is_polling else 'Controlla Posta Ora' }}
+      </button>
+    </form>
+    <a href="/ui/newsletters" class="btn btn-primary">+ Nuova Newsletter</a>
+  </div>
+</div>
+
+{% if message %}
+<div class="callout" style="border-left-color: var(--success); background: rgba(16, 185, 129, 0.08); margin-bottom: 1.5rem;">
+  <p style="color: #6ee7b7; margin: 0;">{{ message }}</p>
+</div>
+{% endif %}
+{% if error %}
+<div class="callout" style="border-left-color: var(--danger); background: rgba(239, 68, 68, 0.08); margin-bottom: 1.5rem;">
+  <p style="color: #fca5a5; margin: 0;">{{ error }}</p>
+</div>
+{% endif %}
+
+<div class="card" style="margin-bottom: 1.5rem; background: rgba(30, 41, 59, 0.7); border-color: rgba(59, 130, 246, 0.25);">
+  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+    <div style="display: flex; align-items: center; gap: 0.75rem;">
+      <span style="font-size: 1.5rem;">🔄</span>
+      <div>
+        <div style="font-weight: 600; color: #fff; font-size: 0.95rem;">
+          Auto-Polling IMAP:
+          {% if polling and polling.enabled %}
+            <span style="color: var(--success);">Attivo (ogni {{ polling.interval_minutes }} min)</span>
+          {% else %}
+            <span style="color: var(--text-secondary);">Disattivato</span>
+          {% endif %}
+        </div>
+        <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.15rem;">
+          Ultimo controllo: <strong>{{ (polling.last_poll_at | local_dt) if polling and polling.last_poll_at else 'Nessuno' }}</strong>
+          &bull; Prossimo: <strong>{{ (polling.next_poll_at | local_dt) if polling and polling.next_poll_at else 'In attesa' }}</strong>
+          {% if polling and polling.total_polls_run %}&bull; Cicli totali: {{ polling.total_polls_run }}{% endif %}
+        </div>
+      </div>
+    </div>
+    <div>
+      <form action="/ui/poll/trigger" method="POST">
+        <button type="submit" class="btn btn-sm btn-secondary" style="background: rgba(59, 130, 246, 0.15); border-color: rgba(59, 130, 246, 0.4); color: #93c5fd;" {% if polling and polling.is_polling %}disabled{% endif %}>
+          ⚡ Esegui Ciclo Subito
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+
+{% if inbox_count and inbox_count > 0 %}
+<div class="callout" style="border-left-color: #eab308; background: rgba(234, 179, 8, 0.1); margin-bottom: 1.5rem;">
+  <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
+    <div>
+      <h3 style="margin-bottom: 0.25rem; color: #facc15;">📬 Nuove Newsletter Rilevate ({{ inbox_count }})</h3>
+      <p style="margin: 0; color: #e2e8f0;">Sono state ricevute email che non corrispondono ad alcuna pubblicazione registrata.</p>
+    </div>
+    <a href="/ui/inbox" class="btn btn-primary btn-sm">Revisiona e Approva &rarr;</a>
+  </div>
+</div>
+{% endif %}
+
+<div class="grid-stats">
+  <div class="card">
+    <div class="stat-val">{{ stats.newsletters_count }}</div>
+    <div class="stat-label">Pubblicazioni Attive</div>
+  </div>
+  <div class="card">
+    <div class="stat-val">{{ stats.total_issues }}</div>
+    <div class="stat-label">Numeri Ricevuti</div>
+  </div>
+  <div class="card">
+    <div class="stat-val" style="color: var(--success)">{{ stats.done_issues }}</div>
+    <div class="stat-label">EPUB Pronti per la Lettura</div>
+  </div>
+  <div class="card">
+    <div class="stat-val">{{ disk_stats_str }}</div>
+    <div class="stat-label">Spazio Occupato su Disco</div>
+  </div>
+</div>
+
+<div class="callout">
+  <h3 style="margin-bottom: 0.5rem; color: #fff;">📡 Configurazione sul Reader CrossPoint</h3>
+  <p>Per scaricare le newsletter sul tuo e-reader Waveshare via Wi-Fi, configura in <strong>Browser OPDS</strong> o <strong>Impostazioni &rarr; OPDS</strong> il seguente URL:</p>
+  <p style="margin-top: 0.5rem;"><code>http://{{ host_ip }}:{{ port }}/opds</code></p>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <span>Ultime Newsletter Elaborate</span>
+    <a href="/ui/library" class="btn btn-secondary btn-sm">Vedi tutte &rarr;</a>
+  </div>
+  
+  <div class="table-responsive">
+    <table>
+      <thead>
+        <tr>
+          <th>Serie</th>
+          <th>Titolo / Oggetto</th>
+          <th>Numero</th>
+          <th>Ricevuto il</th>
+          <th>Stato</th>
+          <th>Azioni</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for issue in recent_issues %}
+        <tr>
+          <td><strong>{{ issue.newsletter_name }}</strong></td>
+          <td>{{ issue.subject }}</td>
+          <td>#{{ issue.series_index }}</td>
+          <td>{{ issue.received_at | local_dt('%Y-%m-%d %H:%M') if issue.received_at else '-' }}</td>
+          <td>
+            <span class="badge badge-{{ issue.status }}">{{ issue.status }}</span>
+          </td>
+          <td>
+            {% if issue.status == 'done' %}
+            <a href="/opds/download/{{ issue.id }}" class="btn btn-secondary btn-sm">Download EPUB</a>
+            {% else %}
+            <span style="color: var(--text-secondary); font-size: 0.8rem;">Non disponibile</span>
+            {% endif %}
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td colspan="6" style="text-align: center; color: var(--text-secondary); padding: 2rem;">
+            Nessun numero elaborato finora.
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
