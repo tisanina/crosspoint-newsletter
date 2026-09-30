@@ -12,8 +12,8 @@
   <Overview>CrossPoint Newsletter Server — Server OPDS 1.2 autonomo e pipeline di conversione automatica da email a libri EPUB ottimizzati per lettori e-ink Waveshare ESP32-S3.</Overview>
   <Category>MediaApp:Books MediaServer:Book Productivity: Status:Stable</Category>
   <WebUI>http://[IP]:[PORT:8400]/ui/</WebUI>
-  <TemplateURL/>
-  <Icon>https://raw.githubusercontent.com/walkxcode/dashboard-icons/main/png/calibre-web.png</Icon>
+  <TemplateURL>https://raw.githubusercontent.com/tisanina/unraid-templates/main/templates/crosspoint-newsletter.xml</TemplateURL>
+  <Icon>https://raw.githubusercontent.com/tisanina/unraid-templates/main/icons/crosspoint-newsletter.png</Icon>
   <ExtraParams>--restart unless-stopped</ExtraParams>
   <PostArgs/>
   <CPUset/>
