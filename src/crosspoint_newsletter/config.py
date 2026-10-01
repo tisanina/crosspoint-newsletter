@@ -29,6 +29,7 @@ CN_KEEP_RAW = os.getenv("CN_KEEP_RAW", "true").lower() in ("true", "1", "yes")
 
 # --- Timezone & Localization ---
 TIMEZONE = os.getenv("CN_TIMEZONE", os.getenv("TZ", "Europe/Rome"))
+LANGUAGE = os.getenv("CN_LANGUAGE", "it").strip().lower()
 
 # --- Polling & Automation ---
 POLL_INTERVAL_MINUTES = int(os.getenv("CN_POLL_INTERVAL_MINUTES", "15"))
@@ -113,5 +114,15 @@ def update_timezone(tz_name: str) -> None:
     update_env_file("CN_TIMEZONE", clean_tz)
     update_env_file("TZ", clean_tz)
     TIMEZONE = clean_tz
+
+
+def update_language(lang_code: str) -> None:
+    """Persist default UI language to .env and refresh runtime configuration."""
+    global LANGUAGE
+    clean_lang = lang_code.strip().lower()
+    if clean_lang not in ("it", "en"):
+        raise ValueError(f"Unsupported language: {lang_code}")
+    update_env_file("CN_LANGUAGE", clean_lang)
+    LANGUAGE = clean_lang
 
 

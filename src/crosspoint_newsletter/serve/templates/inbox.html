@@ -1,13 +1,13 @@
 {% extends "base.html" %}
 
-{% block title %}Nuove Newsletter Rilevate — CrossPoint Newsletter{% endblock %}
+{% block title %}{{ t('inbox.title') }} — CrossPoint Newsletter{% endblock %}
 
 {% block content %}
 <div class="page-header">
   <div>
-    <h1 class="page-title">Nuove Newsletter Rilevate</h1>
+    <h1 class="page-title">{{ t('inbox.title') }}</h1>
     <p class="text-muted" style="margin-top: 0.25rem;">
-      Email ricevute nella casella che non corrispondono ad alcuna newsletter registrata. Puoi approvarle con 1-click, scartarle o bloccare definitivamente il mittente.
+      {{ t('inbox.subtitle') }}
     </p>
   </div>
 </div>
@@ -27,26 +27,26 @@
 {% if not items %}
 <div class="card" style="text-align: center; padding: 3rem 1.5rem;">
   <div style="font-size: 2.5rem; margin-bottom: 0.75rem;">✨</div>
-  <h3>Nessuna newsletter in attesa di approvazione</h3>
+  <h3>{{ t('inbox.empty_title') }}</h3>
   <p class="text-muted" style="max-width: 480px; margin: 0.5rem auto 1.5rem auto;">
-    Tutte le email ricevute sono state associate a newsletter già attive oppure la casella non contiene nuove email sconosciute.
+    {{ t('inbox.empty_desc') }}
   </p>
-  <a href="/ui/newsletters" class="btn btn-secondary">Gestisci Newsletter Esistenti</a>
+  <a href="/ui/newsletters" class="btn btn-secondary">{{ t('inbox.btn_manage_existing') }}</a>
 </div>
 {% else %}
 <div class="card">
   <div class="card-header">
-    <span>Email in attesa di triage ({{ items|length }})</span>
+    <span>{{ t('inbox.pending_count', count=items|length) }}</span>
   </div>
   <div class="table-responsive">
     <table>
       <thead>
         <tr>
-          <th>Mittente Rilevato</th>
-          <th>Indirizzo Email</th>
-          <th>Oggetto</th>
-          <th>Data Ricezione</th>
-          <th style="text-align: right;">Azioni</th>
+          <th>{{ t('inbox.th_sender') }}</th>
+          <th>{{ t('inbox.th_email') }}</th>
+          <th>{{ t('inbox.th_subject') }}</th>
+          <th>{{ t('inbox.th_received_at') }}</th>
+          <th style="text-align: right;">{{ t('common.actions') }}</th>
         </tr>
       </thead>
       <tbody>
@@ -65,22 +65,22 @@
               <!-- 1-Click Approve Form -->
               <form method="POST" action="/ui/inbox/{{ item.id }}/approve" style="margin: 0; display: inline;">
                 <input type="hidden" name="name" value="{{ item.sender_name }}">
-                <button type="submit" class="btn btn-primary btn-sm" title="Registra la newsletter e genera subito l'EPUB">
-                  ✓ Approva con 1-Click
+                <button type="submit" class="btn btn-primary btn-sm" title="{{ t('inbox.approve_tooltip') }}">
+                  {{ t('inbox.btn_approve') }}
                 </button>
               </form>
 
               <!-- Dismiss Form -->
-              <form method="POST" action="/ui/inbox/{{ item.id }}/dismiss" style="margin: 0; display: inline;" onsubmit="return confirm('Sei sicuro di voler scartare solo questa email? (Il mittente potrà inviarne altre in futuro)');">
-                <button type="submit" class="btn btn-secondary btn-sm" title="Ignora ed elimina solo questa email dalla coda">
-                  ✕ Scarta
+              <form method="POST" action="/ui/inbox/{{ item.id }}/dismiss" style="margin: 0; display: inline;" onsubmit="return confirm('{{ t('inbox.dismiss_confirm') | escape }}');">
+                <button type="submit" class="btn btn-secondary btn-sm" title="{{ t('inbox.dismiss_tooltip') }}">
+                  {{ t('inbox.btn_dismiss') }}
                 </button>
               </form>
 
               <!-- Block & Blacklist Form -->
-              <form method="POST" action="/ui/inbox/{{ item.id }}/block" style="margin: 0; display: inline;" onsubmit="return confirm('Sei sicuro di voler scartare questa email e bloccare permanentemente il mittente {{ item.sender_email }}?\nLe future email da questo indirizzo verranno ignorate automaticamente.');">
-                <button type="submit" class="btn btn-danger btn-sm" title="Blocca mittente nella Blacklist e scarta email">
-                  🚫 Blocca
+              <form method="POST" action="/ui/inbox/{{ item.id }}/block" style="margin: 0; display: inline;" onsubmit="return confirm('{{ t('inbox.block_confirm', sender=item.sender_email) | escape }}');">
+                <button type="submit" class="btn btn-danger btn-sm" title="{{ t('inbox.block_tooltip') }}">
+                  {{ t('inbox.btn_block') }}
                 </button>
               </form>
             </div>
@@ -97,13 +97,13 @@
 <div class="card" style="margin-top: 2rem;">
   <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
     <div>
-      <span style="font-weight: 600;">🚫 Mittenti Bloccati (Blacklist)</span>
+      <span style="font-weight: 600;">{{ t('inbox.bl_title') }}</span>
       <span class="text-muted" style="font-size: 0.85rem; margin-left: 0.5rem; font-weight: normal;">
-        ({{ blacklist_count }} mittenti)
+        {{ t('inbox.bl_count', count=blacklist_count) }}
       </span>
     </div>
     <button type="button" class="btn btn-secondary btn-sm" onclick="toggleAddBlacklistForm()">
-      + Aggiungi Mittente a Mano
+      {{ t('inbox.btn_add_manual') }}
     </button>
   </div>
 
@@ -112,39 +112,39 @@
     <form method="POST" action="/ui/blacklist/add">
       <div class="form-row">
         <div class="form-group" style="margin-bottom: 0;">
-          <label for="bl_email">Indirizzo Email *</label>
-          <input type="email" id="bl_email" name="email" placeholder="es. spam@newsletter.com" required>
+          <label for="bl_email">{{ t('inbox.bl_email') }}</label>
+          <input type="email" id="bl_email" name="email" placeholder="{{ t('inbox.bl_email_placeholder') }}" required>
         </div>
         <div class="form-group" style="margin-bottom: 0;">
-          <label for="bl_name">Nome Mittente / Pubblicazione (opzionale)</label>
-          <input type="text" id="bl_name" name="name" placeholder="es. Notiziario Indesiderato">
+          <label for="bl_name">{{ t('inbox.bl_name_optional') }}</label>
+          <input type="text" id="bl_name" name="name" placeholder="{{ t('inbox.bl_name_placeholder') }}">
         </div>
         <div class="form-group" style="margin-bottom: 0;">
-          <label for="bl_reason">Motivo (opzionale)</label>
-          <input type="text" id="bl_reason" name="reason" placeholder="es. Rifiutato / Non di interesse">
+          <label for="bl_reason">{{ t('inbox.bl_reason_optional') }}</label>
+          <input type="text" id="bl_reason" name="reason" placeholder="{{ t('inbox.bl_reason_placeholder') }}">
         </div>
       </div>
       <div style="margin-top: 1rem; display: flex; gap: 0.5rem; justify-content: flex-end;">
-        <button type="button" class="btn btn-secondary btn-sm" onclick="toggleAddBlacklistForm()">Annulla</button>
-        <button type="submit" class="btn btn-danger btn-sm">🚫 Aggiungi alla Blacklist</button>
+        <button type="button" class="btn btn-secondary btn-sm" onclick="toggleAddBlacklistForm()">{{ t('common.cancel') }}</button>
+        <button type="submit" class="btn btn-danger btn-sm">{{ t('inbox.btn_add_bl') }}</button>
       </div>
     </form>
   </div>
 
   {% if not blacklist %}
   <p class="text-muted" style="text-align: center; padding: 1.5rem 0;">
-    Nessun mittente bloccato. Quando scarti un'email cliccando su <strong>"Blocca"</strong>, l'indirizzo verrà inserito qui e non verrà mai più riproposto.
+    {{ t('inbox.bl_empty_desc') | safe }}
   </p>
   {% else %}
   <div class="table-responsive">
     <table>
       <thead>
         <tr>
-          <th>Indirizzo Email Bloccato</th>
-          <th>Nome Rilevato</th>
-          <th>Motivo</th>
-          <th>Data Blocco</th>
-          <th style="text-align: right;">Azione</th>
+          <th>{{ t('inbox.bl_th_email') }}</th>
+          <th>{{ t('inbox.bl_th_name') }}</th>
+          <th>{{ t('inbox.bl_th_reason') }}</th>
+          <th>{{ t('inbox.bl_th_date') }}</th>
+          <th style="text-align: right;">{{ t('inbox.bl_th_action') }}</th>
         </tr>
       </thead>
       <tbody>
@@ -155,9 +155,9 @@
           <td><span class="text-muted">{{ bl.reason }}</span></td>
           <td>{{ bl.created_at }}</td>
           <td style="text-align: right; white-space: nowrap;">
-            <form method="POST" action="/ui/blacklist/{{ bl.id }}/delete" style="margin: 0; display: inline;" onsubmit="return confirm('Vuoi sbloccare {{ bl.sender_email }}? Potrà essere nuovamente proposto in Inbox se invia nuove email.');">
-              <button type="submit" class="btn btn-secondary btn-sm" title="Rimuovi dalla blacklist">
-                ✓ Sblocca
+            <form method="POST" action="/ui/blacklist/{{ bl.id }}/delete" style="margin: 0; display: inline;" onsubmit="return confirm('{{ t('inbox.unblock_confirm', sender=bl.sender_email) | escape }}');">
+              <button type="submit" class="btn btn-secondary btn-sm" title="{{ t('inbox.unblock_tooltip') }}">
+                {{ t('inbox.btn_unblock') }}
               </button>
             </form>
           </td>
@@ -180,4 +180,3 @@
 </script>
 
 {% endblock %}
-

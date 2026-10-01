@@ -39,6 +39,7 @@ La WebUI e il server OPDS girano sullo stesso processo FastAPI (`cn serve`), di 
 - **Rielaborazione manuale**: Bottone "Riprocessa ora" per forzare la riesecuzione della pipeline Transform (HTML→EPUB) a partire dal file raw originale conservato.
 
 ### 5. Impostazioni & Connessioni (`/ui/settings`)
+- **Lingua dell'Interfaccia Web (i18n)**: Supporto bilingue integrato (Italiano 🇮🇹 ed Inglese 🇬🇧) con commutatore rapido nella barra di navigazione (`IT` / `EN`) e scheda dedicata nelle impostazioni per impostare la lingua predefinita di sistema (persistita in `.env` come `CN_LANGUAGE=it|en`). La preferenza per singolo browser viene memorizzata in un cookie (`cn_lang`).
 - **Configurazione IMAP Interattiva**: Form per inserire e modificare in qualsiasi momento host server (es. `imap.gmail.com`), porta SSL (es. `993`), account utente, password/app-password e cartella monitorata (`INBOX`).
 - **Salvataggio Locale Persistente**: Il pulsante **"💾 Salva Configurazione IMAP"** scrive in modo protetto nel file `.env` locale del server e aggiorna all'istante le variabili di runtime senza dover riavviare il servizio.
 - **Test Connessione Live**: Il pulsante **"⚡ Prova Connessione Ora"** verifica in tempo reale sia le credenziali inserite nel form (anche prima di salvarle) sia quelle correnti, mostrando a video un banner verde (conferma con cartella trovata) o rosso (dettaglio errore/autenticazione).
@@ -186,6 +187,35 @@ Rimuove e sblocca un mittente dalla blacklist per ID o per indirizzo email.
 
 ---
 
+## Internazionalizzazione (i18n)
+
+La WebUI supporta l'internazionalizzazione completa basata su cataloghi JSON modulari situati in `src/crosspoint_newsletter/serve/locales/`.
+
+### Lingue supportate
+- **Italiano (`it`)** — Lingua predefinita
+- **English (`en`)** — Full English localization
+
+### Risoluzione della lingua
+La lingua visualizzata viene determinata in base alla seguente priorità:
+1. Parametro URL esplicito: `?lang=en`
+2. Cookie del browser: `cn_lang=en` (impostato tramite lo switch `IT`/`EN` nella navbar o tramite `/ui/lang/{code}`)
+3. Configurazione globale del server in `.env`: `CN_LANGUAGE=it` (modificabile via UI in Impostazioni)
+4. Header HTTP `Accept-Language` del browser
+5. Fallback predefinito: `it`
+
+### Come aggiungere una nuova lingua (es. Spagnolo `es`)
+1. Creare il file `src/crosspoint_newsletter/serve/locales/es.json` copiando la struttura da `en.json` e traducendo i valori.
+2. Aggiungere il codice e il nome della lingua nel dizionario `SUPPORTED_LANGUAGES` in `src/crosspoint_newsletter/serve/i18n.py`:
+   ```python
+   SUPPORTED_LANGUAGES = {
+       "it": "Italiano",
+       "en": "English",
+       "es": "Español",
+   }
+   ```
+3. La nuova lingua comparirà immediatamente nel commutatore in navbar e nella tendina delle Impostazioni!
+
+---
 
 ## Avvio del Servizio
 
@@ -193,3 +223,4 @@ Rimuove e sblocca un mittente dalla blacklist per ID o per indirizzo email.
 # Avvio in ascolto su tutte le interfacce per accesso da LAN ed e-reader:
 cn serve --host 0.0.0.0 --port 8400
 ```
+

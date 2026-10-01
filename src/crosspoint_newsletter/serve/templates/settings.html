@@ -1,10 +1,10 @@
 {% extends "base.html" %}
 
-{% block title %}Impostazioni & Diagnostica — CrossPoint{% endblock %}
+{% block title %}{{ t('settings.title') }} — CrossPoint{% endblock %}
 
 {% block content %}
 <div class="page-header">
-  <h1 class="page-title">Impostazioni & Connessioni</h1>
+  <h1 class="page-title">{{ t('settings.title') }}</h1>
 </div>
 
 {% if message %}
@@ -20,19 +20,52 @@
 
 {% if test_result is defined %}
 <div class="callout" style="border-left-color: {% if test_result.success %}var(--success){% else %}var(--danger){% endif %}; background: {% if test_result.success %}rgba(16, 185, 129, 0.08){% else %}rgba(239, 68, 68, 0.08){% endif %};">
-  <h4 style="margin-bottom: 0.25rem; color: #fff;">Esito Test Connessione IMAP</h4>
+  <h4 style="margin-bottom: 0.25rem; color: #fff;">{{ t('settings.test_result_title') }}</h4>
   <p style="color: {% if test_result.success %}#6ee7b7{% else %}#fca5a5{% endif %};">{{ test_result.message }}</p>
 </div>
 {% endif %}
 
+<!-- Lingua Interfaccia Web Card -->
 <div class="card" style="margin-bottom: 2rem;">
   <div class="card-header">
-    <span>Configurazione IMAP (Ingestione Email)</span>
+    <span>{{ t('settings.lang_title') }}</span>
+    <span class="badge badge-enabled">{{ (supported_languages or {}).get(current_lang, current_lang) }}</span>
+  </div>
+
+  <form action="/ui/settings/language/save" method="POST">
+    <div class="form-row" style="align-items: flex-end;">
+      <div class="form-group" style="flex: 2; margin-bottom: 0;">
+        <label for="language">{{ t('settings.lang_label') }}</label>
+        <select id="language" name="language" style="width: 100%;">
+          {% for code, name in (supported_languages or {}).items() %}
+          <option value="{{ code }}" {% if (current_lang or 'it') == code %}selected{% endif %}>
+            {{ name }} ({{ code|upper }})
+          </option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group" style="margin-bottom: 0;">
+        <button type="submit" class="btn btn-primary">
+          {{ t('settings.btn_save_lang') }}
+        </button>
+      </div>
+    </div>
+  </form>
+
+  <p style="margin-top: 1rem; font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0;">
+    {{ t('settings.lang_help') | safe }}
+  </p>
+</div>
+
+<!-- IMAP Configuration Card -->
+<div class="card" style="margin-bottom: 2rem;">
+  <div class="card-header">
+    <span>{{ t('settings.imap_title') }}</span>
     <div>
       {% if imap_config.host and imap_config.user and imap_config.password_set %}
-      <span class="badge badge-enabled">Credenziali Presenti</span>
+      <span class="badge badge-enabled">{{ t('settings.imap_credentials_present') }}</span>
       {% else %}
-      <span class="badge badge-disabled">Non Configurato</span>
+      <span class="badge badge-disabled">{{ t('settings.imap_not_configured') }}</span>
       {% endif %}
     </div>
   </div>
@@ -40,58 +73,59 @@
   <form action="/ui/settings/imap/save" method="POST">
     <div class="form-row">
       <div class="form-group" style="flex: 2;">
-        <label for="host">Server Host IMAP *</label>
+        <label for="host">{{ t('settings.imap_host') }}</label>
         <input type="text" id="host" name="host" value="{{ imap_config.host or '' }}" placeholder="es. imap.gmail.com" required>
       </div>
       <div class="form-group" style="flex: 1;">
-        <label for="port">Porta SSL *</label>
+        <label for="port">{{ t('settings.imap_port') }}</label>
         <input type="number" id="port" name="port" value="{{ imap_config.port or 993 }}" required>
       </div>
     </div>
 
     <div class="form-row">
       <div class="form-group">
-        <label for="user">Account Email / Utente *</label>
+        <label for="user">{{ t('settings.imap_user') }}</label>
         <input type="text" id="user" name="user" value="{{ imap_config.user or '' }}" placeholder="es. newsletter@esempio.it" required>
       </div>
       <div class="form-group">
         <label for="password">
-          Password {% if imap_config.password_set %}<span style="color: var(--text-secondary); font-weight: 400;">(già salvata: lascia vuoto per non cambiarla)</span>{% else %}*{% endif %}
+          {{ t('settings.imap_password') }} {% if imap_config.password_set %}<span style="color: var(--text-secondary); font-weight: 400;">{{ t('settings.imap_password_help') }}</span>{% else %}*{% endif %}
         </label>
-        <input type="password" id="password" name="password" placeholder="{% if imap_config.password_set %}•••••••••••• (invariata){% else %}Password o App Password{% endif %}">
+        <input type="password" id="password" name="password" placeholder="{% if imap_config.password_set %}{{ t('settings.imap_password_unchanged') }}{% else %}{{ t('settings.imap_password_placeholder') }}{% endif %}">
       </div>
     </div>
 
     <div class="form-group">
-      <label for="folder">Cartella IMAP</label>
+      <label for="folder">{{ t('settings.imap_folder') }}</label>
       <input type="text" id="folder" name="folder" value="{{ imap_config.folder or 'INBOX' }}" placeholder="INBOX" style="max-width: 300px;">
     </div>
 
     <div style="display: flex; gap: 0.75rem; align-items: center; margin-top: 1.5rem;">
       <button type="submit" class="btn btn-primary">
-        💾 Salva Configurazione IMAP
+        {{ t('settings.btn_save_imap') }}
       </button>
       <button type="submit" formaction="/ui/settings/imap/test" class="btn btn-secondary">
-        ⚡ Prova Connessione Ora
+        {{ t('settings.btn_test_imap') }}
       </button>
     </div>
   </form>
 
   <p style="margin-top: 1.25rem; font-size: 0.8rem; color: var(--text-secondary);">
-    💡 I dati vengono salvati localmente nel file protetto <code>.env</code> e hanno effetto immediato sul server. Per account Google/Gmail o Microsoft, utilizza una <em>App Password</em> (password specifica per le app).
+    {{ t('settings.imap_help') | safe }}
   </p>
 </div>
 
+<!-- Timezone Configuration Card -->
 <div class="card" style="margin-bottom: 2rem;">
   <div class="card-header">
-    <span>Fuso Orario & Localizzazione (Timezone)</span>
+    <span>{{ t('settings.tz_title') }}</span>
     <span class="badge badge-enabled">{{ timezone_config.current if timezone_config else 'Europe/Rome' }}</span>
   </div>
 
   <form action="/ui/settings/timezone/save" method="POST">
     <div class="form-row" style="align-items: flex-end;">
       <div class="form-group" style="flex: 2; margin-bottom: 0;">
-        <label for="timezone">Fuso Orario IANA *</label>
+        <label for="timezone">{{ t('settings.tz_label') }}</label>
         <input type="text" id="timezone" name="timezone" list="tz-list" value="{{ timezone_config.current if timezone_config else 'Europe/Rome' }}" placeholder="es. Europe/Rome" required>
         <datalist id="tz-list">
           <option value="Europe/Rome">Europe/Rome (Italia)</option>
@@ -109,48 +143,49 @@
       </div>
       <div class="form-group" style="margin-bottom: 0;">
         <button type="submit" class="btn btn-primary">
-          💾 Salva Fuso Orario
+          {{ t('settings.btn_save_tz') }}
         </button>
       </div>
     </div>
   </form>
 
   <div style="margin-top: 1rem; font-size: 0.85rem; color: var(--text-secondary); display: flex; align-items: center; gap: 0.5rem;">
-    <span>🕒 Ora corrente calcolata dal server:</span>
+    <span>{{ t('settings.server_time') }}</span>
     <strong style="color: #fff;">{{ timezone_config.current_time if timezone_config else '-' }}</strong>
   </div>
 
   <p style="margin-top: 0.75rem; font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0;">
-    💡 Modificando il fuso orario, tutti gli orari visualizzati nella WebUI e nei log verranno calcolati in base a questo fuso. La preferenza viene memorizzata in modo permanente.
+    {{ t('settings.tz_help') | safe }}
   </p>
 </div>
 
+<!-- OPDS 1.2 Configuration Card -->
 <div class="card" style="margin-bottom: 2rem;">
   <div class="card-header">
-    <span>Configurazione Server OPDS 1.2 (Distribuzione E-Reader)</span>
+    <span>{{ t('settings.opds_title') }}</span>
   </div>
 
   <table style="width: 100%;">
     <tbody>
       <tr>
-        <td style="width: 220px; color: var(--text-secondary);">Indirizzo Binding / Host</td>
+        <td style="width: 220px; color: var(--text-secondary);">{{ t('settings.opds_host') }}</td>
         <td><code>{{ opds_config.host }}</code></td>
       </tr>
       <tr>
-        <td style="color: var(--text-secondary);">Porta HTTP</td>
+        <td style="color: var(--text-secondary);">{{ t('settings.opds_port') }}</td>
         <td><code>{{ opds_config.port }}</code></td>
       </tr>
       <tr>
-        <td style="color: var(--text-secondary);">URL Catalogo Root</td>
+        <td style="color: var(--text-secondary);">{{ t('settings.opds_url') }}</td>
         <td><code>http://{{ host_ip }}:{{ opds_config.port }}/opds</code></td>
       </tr>
       <tr>
-        <td style="color: var(--text-secondary);">Autenticazione Basic Auth</td>
+        <td style="color: var(--text-secondary);">{{ t('settings.opds_auth') }}</td>
         <td>
           {% if opds_config.auth_enabled %}
-          <span class="badge badge-enabled">Attiva</span> (Utente: <code>{{ opds_config.username }}</code>)
+          <span class="badge badge-enabled">{{ t('settings.opds_auth_active', user=opds_config.username) | safe }}</span>
           {% else %}
-          <span class="badge badge-disabled">Disattivata</span> (Accesso libero per LAN)
+          <span class="badge badge-disabled">{{ t('settings.opds_auth_disabled') }}</span>
           {% endif %}
         </td>
       </tr>
@@ -158,31 +193,32 @@
   </table>
 </div>
 
+<!-- Storage Configuration Card -->
 <div class="card">
   <div class="card-header">
-    <span>Storage & Cartelle Dati</span>
+    <span>{{ t('settings.storage_title') }}</span>
   </div>
 
   <table style="width: 100%;">
     <tbody>
       <tr>
-        <td style="width: 220px; color: var(--text-secondary);">Cartella Dati (CN_DATA_DIR)</td>
+        <td style="width: 220px; color: var(--text-secondary);">{{ t('settings.storage_data_dir') }}</td>
         <td><code>{{ storage_config.data_dir }}</code></td>
       </tr>
       <tr>
-        <td style="color: var(--text-secondary);">Database SQLite</td>
+        <td style="color: var(--text-secondary);">{{ t('settings.storage_db_path') }}</td>
         <td><code>{{ storage_config.db_path }}</code></td>
       </tr>
       <tr>
-        <td style="color: var(--text-secondary);">Archivio EPUB</td>
+        <td style="color: var(--text-secondary);">{{ t('settings.storage_epub_dir') }}</td>
         <td><code>{{ storage_config.epub_dir }}</code> ({{ storage_config.total_files }} file)</td>
       </tr>
       <tr>
-        <td style="color: var(--text-secondary);">Conservazione Email Raw</td>
-        <td><code>{{ 'Attiva (CN_KEEP_RAW=true)' if storage_config.keep_raw else 'Disattivata' }}</code></td>
+        <td style="color: var(--text-secondary);">{{ t('settings.storage_keep_raw') }}</td>
+        <td><code>{{ t('settings.storage_keep_raw_active') if storage_config.keep_raw else t('settings.storage_keep_raw_disabled') }}</code></td>
       </tr>
       <tr>
-        <td style="color: var(--text-secondary);">Spazio Totale Occupato</td>
+        <td style="color: var(--text-secondary);">{{ t('settings.storage_total_bytes') }}</td>
         <td><strong>{{ storage_config.total_bytes_str }}</strong></td>
       </tr>
     </tbody>

@@ -18,6 +18,7 @@ from fastapi.templating import Jinja2Templates
 from crosspoint_newsletter import config
 from crosspoint_newsletter.ingest.email_client import EmailIngestClient
 from crosspoint_newsletter.ingest.matcher import NewsletterMatcher
+from crosspoint_newsletter.serve import i18n
 from crosspoint_newsletter.serve.opds_builder import EPUB_MIME
 from crosspoint_newsletter.storage.database import Database
 from crosspoint_newsletter.storage.file_store import FileStore
@@ -60,8 +61,32 @@ def format_datetime_local(
 
 templates.env.filters["local_dt"] = format_datetime_local
 templates.env.globals["local_dt"] = format_datetime_local
+templates.env.globals["t"] = i18n.translate
+templates.env.globals["_"] = i18n.translate
 
 ui_router = APIRouter(prefix="/ui", tags=["WebUI"])
+
+
+def render_ui_template(
+    request: Request,
+    template_name: str,
+    context: dict | None = None,
+    status_code: int = 200,
+) -> Response:
+    """Render a Jinja2 template injected with request-specific localization context."""
+    ctx = dict(context or {})
+    lang = i18n.get_active_language(request)
+    ctx["lang"] = lang
+    ctx["current_lang"] = lang
+    ctx["supported_languages"] = i18n.SUPPORTED_LANGUAGES
+    ctx["t"] = lambda key, **kwargs: i18n.translate(key, lang=lang, **kwargs)
+    ctx["_"] = ctx["t"]
+    return templates.TemplateResponse(
+        request=request,
+        name=template_name,
+        context=ctx,
+        status_code=status_code,
+    )
 
 
 def _get_db(request: Request) -> Database:
@@ -125,9 +150,9 @@ def dashboard(
             "status": iss.status,
         })
 
-    return templates.TemplateResponse(
+    return render_ui_template(
         request=request,
-        name="dashboard.html",
+        template_name="dashboard.html",
         context={
             "active_page": "dashboard",
             "inbox_count": db.count_inbox_emails(),
@@ -159,13 +184,15 @@ async def trigger_poll_ui(request: Request) -> RedirectResponse:
         cycle_res = await asyncio.to_thread(run_pipeline_cycle, db, fs)
         res = {"status": "success", "result": cycle_res}
 
+    lang = i18n.get_active_language(request)
     if res.get("status") == "already_running":
+        err_msg = i18n.t("msg.poll_already_running", lang=lang)
         return RedirectResponse(
-            url="/ui/?error=Un+ciclo+di+controllo+posta+è+già+in+corso",
+            url=f"/ui/?error={urllib.parse.quote_plus(err_msg)}",
             status_code=status.HTTP_303_SEE_OTHER,
         )
     elif res.get("status") == "error":
-        err_msg = res.get("error", "Errore durante il controllo posta")
+        err_msg = res.get("error") or i18n.t("msg.poll_error", lang=lang)
         return RedirectResponse(
             url=f"/ui/?error={urllib.parse.quote_plus(err_msg)}",
             status_code=status.HTTP_303_SEE_OTHER,
@@ -175,9 +202,9 @@ async def trigger_poll_ui(request: Request) -> RedirectResponse:
     unseen = cycle_info.get("unseen_count", 0)
     generated = cycle_info.get("epub_generated", 0)
     errors = cycle_info.get("errors", 0)
-    msg = f"Controllo posta completato! {unseen} email trovate, {generated} nuovi EPUB generati"
+    msg = i18n.t("msg.poll_completed", lang=lang, unseen=unseen, generated=generated)
     if errors > 0:
-        msg += f" ({errors} errori)"
+        msg += i18n.t("msg.poll_with_errors", lang=lang, errors=errors)
     return RedirectResponse(
         url=f"/ui/?message={urllib.parse.quote_plus(msg)}",
         status_code=status.HTTP_303_SEE_OTHER,
@@ -211,9 +238,9 @@ def newsletters_list(
             "retention_max_age_days": nl.retention_max_age_days,
         })
 
-    return templates.TemplateResponse(
+    return render_ui_template(
         request=request,
-        name="newsletters.html",
+        template_name="newsletters.html",
         context={
             "active_page": "newsletters",
             "newsletters": nl_data,
@@ -235,6 +262,7 @@ def add_newsletter(
     """Handle adding a new newsletter via HTML form."""
     db = _get_db(request)
 
+    lang = i18n.get_active_language(request)
     clean_slug = (
         slug.strip().lower()
         if slug and slug.strip()
@@ -242,8 +270,9 @@ def add_newsletter(
     )
 
     if db.get_newsletter_by_slug(clean_slug):
+        err = i18n.t("msg.nl_slug_exists", lang=lang, slug=clean_slug)
         return RedirectResponse(
-            url=f"/ui/newsletters?error=Una+newsletter+con+slug+{clean_slug}+esiste+già",
+            url=f"/ui/newsletters?error={urllib.parse.quote_plus(err)}",
             status_code=status.HTTP_303_SEE_OTHER,
         )
 
@@ -260,8 +289,9 @@ def add_newsletter(
         updated_at=now,
     )
     db.upsert_newsletter(nl)
+    msg = i18n.t("msg.nl_created", lang=lang, name=nl.name)
     return RedirectResponse(
-        url=f"/ui/newsletters?message=Newsletter+{nl.name}+creata+con+successo",
+        url=f"/ui/newsletters?message={urllib.parse.quote_plus(msg)}",
         status_code=status.HTTP_303_SEE_OTHER,
     )
 
@@ -277,12 +307,14 @@ def edit_newsletter_ui(
     apply_retention_now: Annotated[bool, Form()] = False,
 ) -> RedirectResponse:
     """Update newsletter name, sender, and retention policies."""
+    lang = i18n.get_active_language(request)
     db = _get_db(request)
     fs = _get_fs(request)
     nl = db.get_newsletter_by_id(nl_id)
     if not nl:
+        err = i18n.t("msg.nl_not_found", lang=lang)
         return RedirectResponse(
-            url="/ui/newsletters?error=Newsletter+non+trovata",
+            url=f"/ui/newsletters?error={urllib.parse.quote_plus(err)}",
             status_code=status.HTTP_303_SEE_OTHER,
         )
 
@@ -316,7 +348,7 @@ def edit_newsletter_ui(
     nl.updated_at = datetime.now(UTC)
     db.upsert_newsletter(nl)
 
-    msg = f"Newsletter '{nl.name}' aggiornata con successo!"
+    msg = i18n.t("msg.nl_updated", lang=lang, name=nl.name)
     if apply_retention_now:
         from crosspoint_newsletter.storage.retention import RetentionManager
 
@@ -324,9 +356,9 @@ def edit_newsletter_ui(
         ret_result = rm.apply_retention(newsletter_id=nl.id, dry_run=False)
         if ret_result.pruned_count > 0:
             mb = round(ret_result.bytes_reclaimed / (1024 * 1024), 2)
-            msg += f" Pulizia retention completata: {ret_result.pruned_count} uscite rimosse ({mb} MB liberati)."
+            msg += i18n.t("msg.retention_pruned", lang=lang, count=ret_result.pruned_count, mb=mb)
         else:
-            msg += " Nessuna uscita eccedente da eliminare."
+            msg += i18n.t("msg.retention_none", lang=lang)
 
     return RedirectResponse(
         url=f"/ui/newsletters?message={urllib.parse.quote_plus(msg)}",
@@ -337,15 +369,17 @@ def edit_newsletter_ui(
 @ui_router.post("/newsletters/{nl_id}/toggle")
 def toggle_newsletter(nl_id: str, request: Request) -> RedirectResponse:
     """Enable or disable a newsletter."""
+    lang = i18n.get_active_language(request)
     db = _get_db(request)
     nl = db.get_newsletter_by_id(nl_id)
     if nl:
         nl.enabled = not nl.enabled
         nl.updated_at = datetime.now(UTC)
         db.upsert_newsletter(nl)
-        state_str = "attivata" if nl.enabled else "disattivata"
+        key = "msg.nl_activated" if nl.enabled else "msg.nl_deactivated"
+        msg = i18n.t(key, lang=lang, name=nl.name)
         return RedirectResponse(
-            url=f"/ui/newsletters?message=Newsletter+{nl.name}+{state_str}",
+            url=f"/ui/newsletters?message={urllib.parse.quote_plus(msg)}",
             status_code=status.HTTP_303_SEE_OTHER,
         )
     return RedirectResponse(url="/ui/newsletters", status_code=status.HTTP_303_SEE_OTHER)
@@ -354,6 +388,7 @@ def toggle_newsletter(nl_id: str, request: Request) -> RedirectResponse:
 @ui_router.post("/newsletters/{nl_id}/delete")
 def delete_newsletter_ui(nl_id: str, request: Request) -> RedirectResponse:
     """Delete newsletter and all files."""
+    lang = i18n.get_active_language(request)
     db = _get_db(request)
     fs = _get_fs(request)
 
@@ -366,8 +401,9 @@ def delete_newsletter_ui(nl_id: str, request: Request) -> RedirectResponse:
             if iss.raw_path:
                 fs.delete_raw(iss.raw_path)
         db.delete_newsletter(nl.id)
+        msg = i18n.t("msg.nl_deleted", lang=lang, name=nl.name)
         return RedirectResponse(
-            url=f"/ui/newsletters?message=Newsletter+{nl.name}+eliminata",
+            url=f"/ui/newsletters?message={urllib.parse.quote_plus(msg)}",
             status_code=status.HTTP_303_SEE_OTHER,
         )
     return RedirectResponse(url="/ui/newsletters", status_code=status.HTTP_303_SEE_OTHER)
@@ -410,9 +446,9 @@ def library_view(
             "error_detail": iss.error_detail,
         })
 
-    return templates.TemplateResponse(
+    return render_ui_template(
         request=request,
-        name="library.html",
+        template_name="library.html",
         context={
             "active_page": "library",
             "issues": issue_rows,
@@ -461,9 +497,9 @@ def issue_detail_view(
         "error_detail": issue.error_detail,
     }
 
-    return templates.TemplateResponse(
+    return render_ui_template(
         request=request,
-        name="issue_detail.html",
+        template_name="issue_detail.html",
         context={
             "active_page": "library",
             "issue": issue_data,
@@ -476,19 +512,22 @@ def issue_detail_view(
 @ui_router.post("/issues/{issue_id}/reprocess")
 def reprocess_issue_ui(issue_id: str, request: Request) -> RedirectResponse:
     """Reprocess an issue from the UI."""
+    lang = i18n.get_active_language(request)
     db = _get_db(request)
     fs = _get_fs(request)
     issue = db.get_issue(issue_id)
     if not issue or not issue.raw_path:
+        err = i18n.t("msg.issue_raw_missing", lang=lang)
         return RedirectResponse(
-            url=f"/ui/issues/{issue_id}?error=Impossibile+riprocessare:+email+raw+assente",
+            url=f"/ui/issues/{issue_id}?error={urllib.parse.quote_plus(err)}",
             status_code=status.HTTP_303_SEE_OTHER,
         )
 
     raw_file = fs.resolve_path(issue.raw_path)
     if not raw_file or not raw_file.is_file():
+        err = i18n.t("msg.issue_raw_not_found", lang=lang)
         return RedirectResponse(
-            url=f"/ui/issues/{issue_id}?error=File+raw+non+trovato+su+disco",
+            url=f"/ui/issues/{issue_id}?error={urllib.parse.quote_plus(err)}",
             status_code=status.HTTP_303_SEE_OTHER,
         )
 
@@ -496,8 +535,9 @@ def reprocess_issue_ui(issue_id: str, request: Request) -> RedirectResponse:
     client = EmailIngestClient(matcher=matcher)
     raw_content = client.process_email_bytes(raw_file.read_bytes())
     if not raw_content:
+        err = i18n.t("msg.issue_parse_failed", lang=lang)
         return RedirectResponse(
-            url=f"/ui/issues/{issue_id}?error=Fallito+parsing+del+file+email",
+            url=f"/ui/issues/{issue_id}?error={urllib.parse.quote_plus(err)}",
             status_code=status.HTTP_303_SEE_OTHER,
         )
 
@@ -508,12 +548,14 @@ def reprocess_issue_ui(issue_id: str, request: Request) -> RedirectResponse:
     res = pipeline.process_raw_content(raw_content)
 
     if res:
+        msg = i18n.t("msg.issue_reprocessed", lang=lang)
         return RedirectResponse(
-            url=f"/ui/issues/{issue_id}?message=Numero+riprocessato+con+successo",
+            url=f"/ui/issues/{issue_id}?message={urllib.parse.quote_plus(msg)}",
             status_code=status.HTTP_303_SEE_OTHER,
         )
+    err = i18n.t("msg.issue_reprocess_error", lang=lang)
     return RedirectResponse(
-        url=f"/ui/issues/{issue_id}?error=Errore+durante+la+conversione",
+        url=f"/ui/issues/{issue_id}?error={urllib.parse.quote_plus(err)}",
         status_code=status.HTTP_303_SEE_OTHER,
     )
 
@@ -549,9 +591,9 @@ def settings_view(
     fs = _get_fs(request)
     disk = fs.get_disk_usage()
 
-    return templates.TemplateResponse(
+    return render_ui_template(
         request=request,
-        name="settings.html",
+        template_name="settings.html",
         context={
             "active_page": "settings",
             "host_ip": _get_local_ip(),
@@ -586,27 +628,90 @@ def settings_view(
     )
 
 
+@ui_router.get("/lang/{lang_code}")
+def change_language_ui(
+    lang_code: str,
+    request: Request,
+    next: str = Query(default="/ui/"),
+) -> RedirectResponse:
+    """Change active UI language via cookie and redirect back."""
+    clean_lang = lang_code.strip().lower()
+    if clean_lang not in i18n.SUPPORTED_LANGUAGES:
+        clean_lang = i18n.DEFAULT_LANGUAGE
+
+    target_next = next if next.startswith("/ui") or next == "/" else "/ui/"
+    response = RedirectResponse(url=target_next, status_code=status.HTTP_303_SEE_OTHER)
+    response.set_cookie(
+        key="cn_lang",
+        value=clean_lang,
+        max_age=365 * 24 * 3600,
+        httponly=False,
+        samesite="lax",
+    )
+    return response
+
+
+@ui_router.post("/settings/language/save")
+def save_language_ui(
+    request: Request,
+    language: Annotated[str, Form()],
+) -> RedirectResponse:
+    """Save updated default UI language setting to .env and set cookie."""
+    clean_lang = language.strip().lower() if language else ""
+    if clean_lang not in i18n.SUPPORTED_LANGUAGES:
+        err = i18n.t("msg.lang_invalid", lang=i18n.DEFAULT_LANGUAGE, name=clean_lang)
+        return RedirectResponse(
+            url=f"/ui/settings?error={urllib.parse.quote_plus(err)}",
+            status_code=status.HTTP_303_SEE_OTHER,
+        )
+    try:
+        config.update_language(clean_lang)
+        lang_name = i18n.SUPPORTED_LANGUAGES[clean_lang]
+        msg = i18n.t("msg.lang_updated", lang=clean_lang, name=lang_name)
+        response = RedirectResponse(
+            url=f"/ui/settings?message={urllib.parse.quote_plus(msg)}",
+            status_code=status.HTTP_303_SEE_OTHER,
+        )
+        response.set_cookie(
+            key="cn_lang",
+            value=clean_lang,
+            max_age=365 * 24 * 3600,
+            httponly=False,
+            samesite="lax",
+        )
+        return response
+    except Exception as exc:
+        return RedirectResponse(
+            url=f"/ui/settings?error={urllib.parse.quote_plus(str(exc))}",
+            status_code=status.HTTP_303_SEE_OTHER,
+        )
+
+
 @ui_router.post("/settings/timezone/save")
 def save_timezone_ui(
     request: Request,
     timezone: Annotated[str, Form()],
 ) -> RedirectResponse:
     """Save updated timezone setting."""
+    lang = i18n.get_active_language(request)
     clean_tz = timezone.strip() if timezone else ""
     if not clean_tz:
+        err = i18n.t("msg.tz_empty", lang=lang)
         return RedirectResponse(
-            url="/ui/settings?error=Il+fuso+orario+non+può+essere+vuoto",
+            url=f"/ui/settings?error={urllib.parse.quote_plus(err)}",
             status_code=status.HTTP_303_SEE_OTHER,
         )
     try:
         config.update_timezone(clean_tz)
+        msg = i18n.t("msg.tz_updated", lang=lang, tz=config.TIMEZONE)
         return RedirectResponse(
-            url=f"/ui/settings?message=Fuso+orario+aggiornato+con+successo+a+{urllib.parse.quote_plus(config.TIMEZONE)}",
+            url=f"/ui/settings?message={urllib.parse.quote_plus(msg)}",
             status_code=status.HTTP_303_SEE_OTHER,
         )
     except Exception as exc:
+        err = i18n.t("msg.tz_invalid", lang=lang, err=str(exc))
         return RedirectResponse(
-            url=f"/ui/settings?error=Fuso+orario+non+valido:+{urllib.parse.quote_plus(str(exc))}",
+            url=f"/ui/settings?error={urllib.parse.quote_plus(err)}",
             status_code=status.HTTP_303_SEE_OTHER,
         )
 
@@ -621,9 +726,11 @@ def save_imap_ui(
     folder: Annotated[str, Form()] = "INBOX",
 ) -> RedirectResponse:
     """Save updated IMAP credentials to .env and runtime config."""
+    lang = i18n.get_active_language(request)
     if not host.strip() or not user.strip():
+        err = i18n.t("msg.imap_fields_required", lang=lang)
         return RedirectResponse(
-            url="/ui/settings?error=Host+server+e+Account+utente+sono+obbligatori",
+            url=f"/ui/settings?error={urllib.parse.quote_plus(err)}",
             status_code=status.HTTP_303_SEE_OTHER,
         )
 
@@ -635,13 +742,15 @@ def save_imap_ui(
             password=password if password and password.strip() else None,
             folder=folder,
         )
+        msg = i18n.t("msg.imap_saved", lang=lang)
         return RedirectResponse(
-            url="/ui/settings?message=Configurazione+IMAP+salvata+con+successo",
+            url=f"/ui/settings?message={urllib.parse.quote_plus(msg)}",
             status_code=status.HTTP_303_SEE_OTHER,
         )
     except Exception as exc:
+        err = i18n.t("msg.imap_save_error", lang=lang, err=str(exc))
         return RedirectResponse(
-            url=f"/ui/settings?error=Errore+durante+il+salvataggio:+{exc}",
+            url=f"/ui/settings?error={urllib.parse.quote_plus(err)}",
             status_code=status.HTTP_303_SEE_OTHER,
         )
 
@@ -681,9 +790,9 @@ def test_imap_ui(
     )
     success, msg = client.test_connection()
 
-    return templates.TemplateResponse(
+    return render_ui_template(
         request=request,
-        name="settings.html",
+        template_name="settings.html",
         context={
             "active_page": "settings",
             "host_ip": _get_local_ip(),
@@ -750,9 +859,9 @@ def inbox_list(
             "created_at": format_datetime_local(b.created_at, "%Y-%m-%d %H:%M"),
         })
 
-    return templates.TemplateResponse(
+    return render_ui_template(
         request=request,
-        name="inbox.html",
+        template_name="inbox.html",
         context={
             "active_page": "inbox",
             "inbox_count": inbox_count,
@@ -773,10 +882,12 @@ def inbox_approve_form(
     slug: Annotated[str | None, Form()] = None,
 ) -> RedirectResponse:
     """Handle approval of an unassigned email via WebUI form."""
+    lang = i18n.get_active_language(request)
     db = _get_db(request)
     item = db.get_inbox_email(inbox_id)
     if not item:
-        return RedirectResponse(url="/ui/inbox?error=Email+non+trovata", status_code=303)
+        err = i18n.t("msg.email_not_found", lang=lang)
+        return RedirectResponse(url=f"/ui/inbox?error={urllib.parse.quote_plus(err)}", status_code=303)
 
     nl_name = (name.strip() if name and name.strip() else None) or item.sender_name or "Newsletter"
     nl_slug = (slug.strip() if slug and slug.strip() else None) or nl_name.lower().replace(" ", "-").replace("'", "")
@@ -812,9 +923,9 @@ def inbox_approve_form(
     # 3. Remove from inbox
     db.delete_inbox_email(inbox_id)
 
-    msg = f"Newsletter '{nl.name}' approvata con successo!" + (
-        " Numero convertito in EPUB ed esposto su OPDS." if created_epub else ""
-    )
+    msg = i18n.t("msg.inbox_approved", lang=lang, name=nl.name)
+    if created_epub:
+        msg += i18n.t("msg.inbox_approved_epub", lang=lang)
     return RedirectResponse(
         url=f"/ui/inbox?message={urllib.parse.quote_plus(msg)}",
         status_code=303,
@@ -824,16 +935,18 @@ def inbox_approve_form(
 @ui_router.post("/inbox/{inbox_id}/dismiss")
 def inbox_dismiss_form(inbox_id: str, request: Request) -> RedirectResponse:
     """Dismiss/delete an email from the inbox queue via WebUI form."""
+    lang = i18n.get_active_language(request)
     db = _get_db(request)
     item = db.get_inbox_email(inbox_id)
     if not item:
-        return RedirectResponse(url="/ui/inbox?error=Email+non+trovata", status_code=303)
+        err = i18n.t("msg.email_not_found", lang=lang)
+        return RedirectResponse(url=f"/ui/inbox?error={urllib.parse.quote_plus(err)}", status_code=303)
 
     if item.raw_eml_path:
         Path(item.raw_eml_path).unlink(missing_ok=True)
     db.delete_inbox_email(inbox_id)
 
-    msg = "Email scartata e rimossa dalla coda."
+    msg = i18n.t("msg.inbox_dismissed", lang=lang)
     return RedirectResponse(
         url=f"/ui/inbox?message={urllib.parse.quote_plus(msg)}",
         status_code=303,
@@ -843,10 +956,12 @@ def inbox_dismiss_form(inbox_id: str, request: Request) -> RedirectResponse:
 @ui_router.post("/inbox/{inbox_id}/block")
 def inbox_block_form(inbox_id: str, request: Request) -> RedirectResponse:
     """Dismiss an email and permanently blacklist its sender via WebUI."""
+    lang = i18n.get_active_language(request)
     db = _get_db(request)
     item = db.get_inbox_email(inbox_id)
     if not item:
-        return RedirectResponse(url="/ui/inbox?error=Email+non+trovata", status_code=303)
+        err = i18n.t("msg.email_not_found", lang=lang)
+        return RedirectResponse(url=f"/ui/inbox?error={urllib.parse.quote_plus(err)}", status_code=303)
 
     db.add_to_blacklist(
         sender_email=item.sender_email,
@@ -857,7 +972,7 @@ def inbox_block_form(inbox_id: str, request: Request) -> RedirectResponse:
         Path(item.raw_eml_path).unlink(missing_ok=True)
     db.delete_inbox_email(inbox_id)
 
-    msg = f"Mittente '{item.sender_email}' aggiunto alla Blacklist ed email rimossa dalla coda."
+    msg = i18n.t("msg.inbox_blocked", lang=lang, email=item.sender_email)
     return RedirectResponse(
         url=f"/ui/inbox?message={urllib.parse.quote_plus(msg)}",
         status_code=303,
@@ -872,17 +987,19 @@ def blacklist_add_form(
     reason: Annotated[str | None, Form()] = None,
 ) -> RedirectResponse:
     """Add a sender email to the blacklist via WebUI form."""
+    lang = i18n.get_active_language(request)
     db = _get_db(request)
     clean_email = email.strip()
     if not clean_email:
-        return RedirectResponse(url="/ui/inbox?error=Indirizzo+email+obbligatorio", status_code=303)
+        err = i18n.t("msg.bl_email_required", lang=lang)
+        return RedirectResponse(url=f"/ui/inbox?error={urllib.parse.quote_plus(err)}", status_code=303)
 
     entry = db.add_to_blacklist(
         sender_email=clean_email,
         sender_name=name.strip() if name and name.strip() else None,
         reason=reason.strip() if reason and reason.strip() else "Manuale",
     )
-    msg = f"Indirizzo '{entry.sender_email}' aggiunto alla Blacklist."
+    msg = i18n.t("msg.bl_added", lang=lang, email=entry.sender_email)
     return RedirectResponse(
         url=f"/ui/inbox?message={urllib.parse.quote_plus(msg)}",
         status_code=303,
@@ -892,15 +1009,17 @@ def blacklist_add_form(
 @ui_router.post("/blacklist/{entry_id}/delete")
 def blacklist_delete_form(entry_id: str, request: Request) -> RedirectResponse:
     """Remove an entry from the blacklist via WebUI form."""
+    lang = i18n.get_active_language(request)
     db = _get_db(request)
     entry = db.get_blacklist_entry(entry_id)
     email_str = entry.sender_email if entry else entry_id
     deleted = db.remove_from_blacklist(entry_id)
     if deleted:
-        msg = f"Mittente '{email_str}' rimosso dalla Blacklist."
+        msg = i18n.t("msg.bl_removed", lang=lang, email=email_str)
         return RedirectResponse(
             url=f"/ui/inbox?message={urllib.parse.quote_plus(msg)}",
             status_code=303,
         )
-    return RedirectResponse(url="/ui/inbox?error=Voce+blacklist+non+trovata", status_code=303)
+    err = i18n.t("msg.bl_not_found", lang=lang)
+    return RedirectResponse(url=f"/ui/inbox?error={urllib.parse.quote_plus(err)}", status_code=303)
 

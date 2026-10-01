@@ -321,3 +321,82 @@ class TestWebUIPages:
             config.TIMEZONE = orig_tz
 
 
+class TestWebUII18n:
+    def test_i18n_translation_unit(self) -> None:
+        from crosspoint_newsletter.serve.i18n import t
+
+        assert t("common.save", "it") == "Salva"
+        assert t("common.save", "en") == "Save"
+        assert t("dashboard.stat_ready", "it") == "EPUB Pronti per la Lettura"
+        assert t("dashboard.stat_ready", "en") == "EPUBs Ready to Read"
+        assert t("non_existent_key_xyz", "it") == "non_existent_key_xyz"
+
+    def test_dashboard_renders_english_via_cookie(self, web_client) -> None:
+        client, _, _ = web_client
+        resp = client.get("/ui/", cookies={"cn_lang": "en"})
+        assert resp.status_code == 200
+        assert 'lang="en"' in resp.text
+        assert "System Overview" in resp.text
+        assert "IMAP Auto-Polling:" in resp.text
+        assert "Active Publications" in resp.text
+        assert "Check Mail Now" in resp.text
+
+    def test_newsletters_renders_english(self, web_client) -> None:
+        client, db, _ = web_client
+        resp = client.get("/ui/newsletters", cookies={"cn_lang": "en"})
+        assert resp.status_code == 200
+        assert "Newsletter Publications" in resp.text
+        assert "Registered Publications" in resp.text
+        assert "Register New Newsletter" in resp.text
+
+    def test_inbox_renders_english(self, web_client) -> None:
+        client, _, _ = web_client
+        resp = client.get("/ui/inbox", cookies={"cn_lang": "en"})
+        assert resp.status_code == 200
+        assert "New Newsletters Detected" in resp.text
+        assert "Blocked Senders (Blacklist)" in resp.text
+
+    def test_library_and_settings_renders_english(self, web_client) -> None:
+        client, _, _ = web_client
+        resp_lib = client.get("/ui/library", cookies={"cn_lang": "en"})
+        assert resp_lib.status_code == 200
+        assert "EPUB Newsletter Library" in resp_lib.text
+
+        resp_set = client.get("/ui/settings", cookies={"cn_lang": "en"})
+        assert resp_set.status_code == 200
+        assert "Settings &amp; Connections" in resp_set.text
+        assert "Web Interface Language" in resp_set.text
+
+    def test_lang_switch_route(self, web_client) -> None:
+        client, _, _ = web_client
+        resp = client.get("/ui/lang/en?next=/ui/newsletters", follow_redirects=False)
+        assert resp.status_code in (302, 303, 307)
+        assert resp.headers["location"] == "/ui/newsletters"
+        assert "cn_lang=en" in resp.headers.get("set-cookie", "")
+
+    def test_save_language_ui(self, web_client, monkeypatch) -> None:
+        client, _, _ = web_client
+        orig_lang = config.LANGUAGE
+        monkeypatch.setattr(config, "update_env_file", lambda k, v: None)
+        try:
+            resp = client.post(
+                "/ui/settings/language/save",
+                data={"language": "en"},
+                follow_redirects=True,
+            )
+            assert resp.status_code == 200
+            assert config.LANGUAGE == "en"
+            assert "Interface language successfully updated to English" in resp.text
+
+            # Test invalid language
+            bad_resp = client.post(
+                "/ui/settings/language/save",
+                data={"language": "invalid_lang"},
+                follow_redirects=True,
+            )
+            assert bad_resp.status_code == 200
+            assert "Lingua non supportata" in bad_resp.text or "Unsupported language" in bad_resp.text
+        finally:
+            config.LANGUAGE = orig_lang
+
+

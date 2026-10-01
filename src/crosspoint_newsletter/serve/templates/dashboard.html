@@ -4,14 +4,14 @@
 
 {% block content %}
 <div class="page-header">
-  <h1 class="page-title">Panoramica del Sistema</h1>
+  <h1 class="page-title">{{ t('dashboard.title') }}</h1>
   <div style="display: flex; gap: 0.6rem; align-items: center;">
     <form action="/ui/poll/trigger" method="POST" style="display: inline;">
       <button type="submit" class="btn btn-secondary" {% if polling and polling.is_polling %}disabled{% endif %}>
-        ⚡ {{ 'Controllo in corso...' if polling and polling.is_polling else 'Controlla Posta Ora' }}
+        ⚡ {{ t('dashboard.checking_mail') if polling and polling.is_polling else t('dashboard.check_mail_now') }}
       </button>
     </form>
-    <a href="/ui/newsletters" class="btn btn-primary">+ Nuova Newsletter</a>
+    <a href="/ui/newsletters" class="btn btn-primary">{{ t('dashboard.new_newsletter') }}</a>
   </div>
 </div>
 
@@ -32,24 +32,24 @@
       <span style="font-size: 1.5rem;">🔄</span>
       <div>
         <div style="font-weight: 600; color: #fff; font-size: 0.95rem;">
-          Auto-Polling IMAP:
+          {{ t('dashboard.auto_polling') }}
           {% if polling and polling.enabled %}
-            <span style="color: var(--success);">Attivo (ogni {{ polling.interval_minutes }} min)</span>
+            <span style="color: var(--success);">{{ t('dashboard.polling_active', minutes=polling.interval_minutes) }}</span>
           {% else %}
-            <span style="color: var(--text-secondary);">Disattivato</span>
+            <span style="color: var(--text-secondary);">{{ t('dashboard.polling_disabled') }}</span>
           {% endif %}
         </div>
         <div style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.15rem;">
-          Ultimo controllo: <strong>{{ (polling.last_poll_at | local_dt) if polling and polling.last_poll_at else 'Nessuno' }}</strong>
-          &bull; Prossimo: <strong>{{ (polling.next_poll_at | local_dt) if polling and polling.next_poll_at else 'In attesa' }}</strong>
-          {% if polling and polling.total_polls_run %}&bull; Cicli totali: {{ polling.total_polls_run }}{% endif %}
+          {{ t('dashboard.last_check') }} <strong>{{ (polling.last_poll_at | local_dt) if polling and polling.last_poll_at else t('dashboard.none') }}</strong>
+          &bull; {{ t('dashboard.next_check') }} <strong>{{ (polling.next_poll_at | local_dt) if polling and polling.next_poll_at else t('dashboard.waiting') }}</strong>
+          {% if polling and polling.total_polls_run %}&bull; {{ t('dashboard.total_cycles', count=polling.total_polls_run) }}{% endif %}
         </div>
       </div>
     </div>
     <div>
       <form action="/ui/poll/trigger" method="POST">
         <button type="submit" class="btn btn-sm btn-secondary" style="background: rgba(59, 130, 246, 0.15); border-color: rgba(59, 130, 246, 0.4); color: #93c5fd;" {% if polling and polling.is_polling %}disabled{% endif %}>
-          ⚡ Esegui Ciclo Subito
+          {{ t('dashboard.run_cycle_now') }}
         </button>
       </form>
     </div>
@@ -60,10 +60,10 @@
 <div class="callout" style="border-left-color: #eab308; background: rgba(234, 179, 8, 0.1); margin-bottom: 1.5rem;">
   <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
     <div>
-      <h3 style="margin-bottom: 0.25rem; color: #facc15;">📬 Nuove Newsletter Rilevate ({{ inbox_count }})</h3>
-      <p style="margin: 0; color: #e2e8f0;">Sono state ricevute email che non corrispondono ad alcuna pubblicazione registrata.</p>
+      <h3 style="margin-bottom: 0.25rem; color: #facc15;">{{ t('dashboard.inbox_badge_title', count=inbox_count) }}</h3>
+      <p style="margin: 0; color: #e2e8f0;">{{ t('dashboard.inbox_badge_desc') }}</p>
     </div>
-    <a href="/ui/inbox" class="btn btn-primary btn-sm">Revisiona e Approva &rarr;</a>
+    <a href="/ui/inbox" class="btn btn-primary btn-sm">{{ t('dashboard.inbox_badge_btn') }}</a>
   </div>
 </div>
 {% endif %}
@@ -71,44 +71,44 @@
 <div class="grid-stats">
   <div class="card">
     <div class="stat-val">{{ stats.newsletters_count }}</div>
-    <div class="stat-label">Pubblicazioni Attive</div>
+    <div class="stat-label">{{ t('dashboard.stat_publications') }}</div>
   </div>
   <div class="card">
     <div class="stat-val">{{ stats.total_issues }}</div>
-    <div class="stat-label">Numeri Ricevuti</div>
+    <div class="stat-label">{{ t('dashboard.stat_received') }}</div>
   </div>
   <div class="card">
     <div class="stat-val" style="color: var(--success)">{{ stats.done_issues }}</div>
-    <div class="stat-label">EPUB Pronti per la Lettura</div>
+    <div class="stat-label">{{ t('dashboard.stat_ready') }}</div>
   </div>
   <div class="card">
     <div class="stat-val">{{ disk_stats_str }}</div>
-    <div class="stat-label">Spazio Occupato su Disco</div>
+    <div class="stat-label">{{ t('dashboard.stat_disk_space') }}</div>
   </div>
 </div>
 
 <div class="callout">
-  <h3 style="margin-bottom: 0.5rem; color: #fff;">📡 Configurazione sul Reader CrossPoint</h3>
-  <p>Per scaricare le newsletter sul tuo e-reader Waveshare via Wi-Fi, configura in <strong>Browser OPDS</strong> o <strong>Impostazioni &rarr; OPDS</strong> il seguente URL:</p>
+  <h3 style="margin-bottom: 0.5rem; color: #fff;">{{ t('dashboard.reader_setup_title') }}</h3>
+  <p>{{ t('dashboard.reader_setup_desc') | safe }}</p>
   <p style="margin-top: 0.5rem;"><code>http://{{ host_ip }}:{{ port }}/opds</code></p>
 </div>
 
 <div class="card">
   <div class="card-header">
-    <span>Ultime Newsletter Elaborate</span>
-    <a href="/ui/library" class="btn btn-secondary btn-sm">Vedi tutte &rarr;</a>
+    <span>{{ t('dashboard.recent_newsletters') }}</span>
+    <a href="/ui/library" class="btn btn-secondary btn-sm">{{ t('common.view_all') }}</a>
   </div>
   
   <div class="table-responsive">
     <table>
       <thead>
         <tr>
-          <th>Serie</th>
-          <th>Titolo / Oggetto</th>
-          <th>Numero</th>
-          <th>Ricevuto il</th>
-          <th>Stato</th>
-          <th>Azioni</th>
+          <th>{{ t('table.series') }}</th>
+          <th>{{ t('table.title_subject') }}</th>
+          <th>{{ t('table.issue_number') }}</th>
+          <th>{{ t('table.received_on') }}</th>
+          <th>{{ t('table.status') }}</th>
+          <th>{{ t('table.actions') }}</th>
         </tr>
       </thead>
       <tbody>
@@ -123,16 +123,16 @@
           </td>
           <td>
             {% if issue.status == 'done' %}
-            <a href="/opds/download/{{ issue.id }}" class="btn btn-secondary btn-sm">Download EPUB</a>
+            <a href="/opds/download/{{ issue.id }}" class="btn btn-secondary btn-sm">{{ t('dashboard.download_epub') }}</a>
             {% else %}
-            <span style="color: var(--text-secondary); font-size: 0.8rem;">Non disponibile</span>
+            <span style="color: var(--text-secondary); font-size: 0.8rem;">{{ t('dashboard.not_available') }}</span>
             {% endif %}
           </td>
         </tr>
         {% else %}
         <tr>
           <td colspan="6" style="text-align: center; color: var(--text-secondary); padding: 2rem;">
-            Nessun numero elaborato finora.
+            {{ t('dashboard.no_recent_issues') }}
           </td>
         </tr>
         {% endfor %}

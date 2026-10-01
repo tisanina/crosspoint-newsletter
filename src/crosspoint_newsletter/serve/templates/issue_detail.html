@@ -1,11 +1,11 @@
 {% extends "base.html" %}
 
-{% block title %}Dettaglio Issue — {{ issue.subject }}{% endblock %}
+{% block title %}{{ t('issue.title') }} — {{ issue.subject }}{% endblock %}
 
 {% block content %}
 <div class="page-header">
-  <h1 class="page-title">Dettaglio Numero</h1>
-  <a href="/ui/library" class="btn btn-secondary">&larr; Torna alla Libreria</a>
+  <h1 class="page-title">{{ t('issue.title') }}</h1>
+  <a href="/ui/library" class="btn btn-secondary">{{ t('issue.back_to_library') }}</a>
 </div>
 
 {% if message %}
@@ -21,15 +21,15 @@
 
 <div style="display: grid; grid-template-columns: 280px 1fr; gap: 2rem; align-items: start;">
   <div class="card" style="text-align: center;">
-    <img src="/opds/cover/{{ issue.id }}" alt="Copertina e-ink" style="width: 100%; border-radius: 6px; border: 1px solid var(--border-color); box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
+    <img src="/opds/cover/{{ issue.id }}" alt="Cover" style="width: 100%; border-radius: 6px; border: 1px solid var(--border-color); box-shadow: 0 4px 10px rgba(0,0,0,0.3);">
     <div style="margin-top: 1rem; display: flex; flex-direction: column; gap: 0.5rem;">
       {% if issue.status == 'done' %}
-      <a href="/ui/issues/{{ issue.id }}/download" class="btn btn-primary">⬇ Scarica EPUB</a>
+      <a href="/ui/issues/{{ issue.id }}/download" class="btn btn-primary">{{ t('issue.download_epub') }}</a>
       {% endif %}
 
       {% if issue.raw_path %}
       <form action="/ui/issues/{{ issue.id }}/reprocess" method="POST">
-        <button type="submit" class="btn btn-secondary" style="width: 100%;">🔄 Riprocessa Conversione</button>
+        <button type="submit" class="btn btn-secondary" style="width: 100%;">{{ t('issue.reprocess_btn') }}</button>
       </form>
       {% endif %}
     </div>
@@ -37,43 +37,43 @@
 
   <div class="card">
     <div class="card-header">
-      <span>Metadati & Informazioni</span>
+      <span>{{ t('issue.metadata_title') }}</span>
       <span class="badge badge-{{ issue.status }}">{{ issue.status }}</span>
     </div>
 
     <table style="width: 100%;">
       <tbody>
         <tr>
-          <td style="width: 180px; color: var(--text-secondary);">Titolo / Oggetto</td>
+          <td style="width: 180px; color: var(--text-secondary);">{{ t('issue.th_title') }}</td>
           <td><strong>{{ issue.subject }}</strong></td>
         </tr>
         <tr>
-          <td style="color: var(--text-secondary);">Newsletter / Serie</td>
-          <td>{{ issue.newsletter_name }} (Indice: #{{ issue.series_index }})</td>
+          <td style="color: var(--text-secondary);">{{ t('issue.th_newsletter') }}</td>
+          <td>{{ issue.newsletter_name }} ({{ t('issue.series_index_label', index=issue.series_index) }})</td>
         </tr>
         <tr>
-          <td style="color: var(--text-secondary);">Email Message-ID</td>
+          <td style="color: var(--text-secondary);">{{ t('issue.th_email_mid') }}</td>
           <td><code>{{ issue.email_message_id }}</code></td>
         </tr>
         <tr>
-          <td style="color: var(--text-secondary);">Data Ricezione</td>
+          <td style="color: var(--text-secondary);">{{ t('issue.th_received_at') }}</td>
           <td>{{ issue.received_at }}</td>
         </tr>
         <tr>
-          <td style="color: var(--text-secondary);">Data Elaborazione</td>
-          <td>{{ issue.processed_at or 'In corso / Non completato' }}</td>
+          <td style="color: var(--text-secondary);">{{ t('issue.th_processed_at') }}</td>
+          <td>{{ issue.processed_at or t('issue.not_completed') }}</td>
         </tr>
         <tr>
-          <td style="color: var(--text-secondary);">Percorso EPUB su Disco</td>
+          <td style="color: var(--text-secondary);">{{ t('issue.th_epub_path') }}</td>
           <td><code>{{ issue.epub_path or 'N/A' }}</code></td>
         </tr>
         <tr>
-          <td style="color: var(--text-secondary);">Email Raw Archiviata</td>
+          <td style="color: var(--text-secondary);">{{ t('issue.th_raw_path') }}</td>
           <td><code>{{ issue.raw_path or 'N/A' }}</code></td>
         </tr>
         {% if issue.error_detail %}
         <tr>
-          <td style="color: var(--danger);">Dettaglio Errore</td>
+          <td style="color: var(--danger);">{{ t('issue.th_error_detail') }}</td>
           <td style="color: var(--danger);"><code>{{ issue.error_detail }}</code></td>
         </tr>
         {% endif %}
@@ -83,10 +83,10 @@
     {% if issue.metadata and issue.metadata.quality_report %}
     <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border-color);">
       <h4 style="margin-bottom: 0.75rem;">Quality Gate Score</h4>
-      <p>Punteggio di qualità EPUB: <strong>{{ "%.2f"|format(issue.metadata.quality_report.score * 100) }}%</strong></p>
+      <p>{{ t('issue.quality_score') }} <strong>{{ "%.2f"|format(issue.metadata.quality_report.score * 100) }}%</strong></p>
       {% if issue.metadata.quality_report.warnings %}
       <p style="color: var(--warning); margin-top: 0.5rem; font-size: 0.85rem;">
-        Avvisi: {{ issue.metadata.quality_report.warnings|join(', ') }}
+        {{ t('issue.warnings') }} {{ issue.metadata.quality_report.warnings|join(', ') }}
       </p>
       {% endif %}
     </div>

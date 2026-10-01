@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="it">
+<html lang="{{ current_lang or 'it' }}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,15 +9,15 @@
 <body>
   <nav class="navbar">
     <a href="/ui/" class="navbar-brand">
-      <span>📰</span> CrossPoint Newsletter
+      <span>📰</span> {{ t('nav.brand') }}
     </a>
-    <ul class="navbar-nav">
-      <li><a href="/ui/" class="nav-link {% if active_page == 'dashboard' %}active{% endif %}">Dashboard</a></li>
-      <li><a href="/ui/newsletters" class="nav-link {% if active_page == 'newsletters' %}active{% endif %}">Newsletter</a></li>
-      <li><a href="/ui/inbox" class="nav-link {% if active_page == 'inbox' %}active{% endif %}">Da Approvare{% if inbox_count and inbox_count > 0 %} <span style="background: #eab308; color: #000; font-size: 0.75rem; font-weight: bold; border-radius: 9999px; padding: 2px 7px; margin-left: 4px;">{{ inbox_count }}</span>{% endif %}</a></li>
-      <li><a href="/ui/library" class="nav-link {% if active_page == 'library' %}active{% endif %}">Libreria EPUB</a></li>
-      <li><a href="/ui/settings" class="nav-link {% if active_page == 'settings' %}active{% endif %}">Impostazioni</a></li>
-      <li><a href="/opds" target="_blank" class="nav-link">Feed OPDS ↗</a></li>
+    <ul class="navbar-nav" style="align-items: center;">
+      <li><a href="/ui/" class="nav-link {% if active_page == 'dashboard' %}active{% endif %}">{{ t('nav.dashboard') }}</a></li>
+      <li><a href="/ui/newsletters" class="nav-link {% if active_page == 'newsletters' %}active{% endif %}">{{ t('nav.newsletters') }}</a></li>
+      <li><a href="/ui/inbox" class="nav-link {% if active_page == 'inbox' %}active{% endif %}">{{ t('nav.inbox') }}{% if inbox_count and inbox_count > 0 %} <span style="background: #eab308; color: #000; font-size: 0.75rem; font-weight: bold; border-radius: 9999px; padding: 2px 7px; margin-left: 4px;">{{ inbox_count }}</span>{% endif %}</a></li>
+      <li><a href="/ui/library" class="nav-link {% if active_page == 'library' %}active{% endif %}">{{ t('nav.library') }}</a></li>
+      <li><a href="/ui/settings" class="nav-link {% if active_page == 'settings' %}active{% endif %}">{{ t('nav.settings') }}</a></li>
+      <li><a href="/opds" target="_blank" class="nav-link">{{ t('nav.opds_feed') }}</a></li>
     </ul>
   </nav>
 
@@ -26,7 +26,7 @@
   </main>
 
   <footer>
-    <p>CrossPoint Newsletter Server v0.1.0 &bull; Canale di distribuzione OPDS 1.2 per lettori e-ink Waveshare ESP32-S3</p>
+    <p>{{ t('footer.text') }}</p>
   </footer>
 </body>
 </html>

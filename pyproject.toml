@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "crosspoint-newsletter"
-version = "0.1.0"
+version = "0.1.1"
 description = "Newsletter-to-EPUB pipeline for CrossPoint e-ink readers"
 readme = "README.md"
 requires-python = ">=3.12"
@@ -46,7 +46,7 @@ cn = "crosspoint_newsletter.cli:main"
 where = ["src"]
 
 [tool.setuptools.package-data]
-"crosspoint_newsletter.serve" = ["templates/*.html", "static/*"]
+"crosspoint_newsletter.serve" = ["templates/*.html", "static/*", "locales/*.json"]
 
 [tool.ruff]
 target-version = "py312"

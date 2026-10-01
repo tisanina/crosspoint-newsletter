@@ -1,23 +1,23 @@
 {% extends "base.html" %}
 
-{% block title %}Libreria EPUB — CrossPoint{% endblock %}
+{% block title %}{{ t('library.title') }} — CrossPoint{% endblock %}
 
 {% block content %}
 <div class="page-header">
-  <h1 class="page-title">Libreria Newsletter EPUB</h1>
+  <h1 class="page-title">{{ t('library.title') }}</h1>
 </div>
 
 <div class="card" style="margin-bottom: 2rem;">
   <form action="/ui/library" method="GET" class="form-row" style="align-items: flex-end;">
     <div class="form-group" style="flex: 2;">
-      <label for="search">Cerca per Oggetto / Titolo</label>
-      <input type="text" id="search" name="search" value="{{ search or '' }}" placeholder="Es. Tassi d'interesse...">
+      <label for="search">{{ t('library.search_label') }}</label>
+      <input type="text" id="search" name="search" value="{{ search or '' }}" placeholder="{{ t('library.search_placeholder') }}">
     </div>
     
     <div class="form-group" style="flex: 1;">
-      <label for="newsletter">Filtra per Serie</label>
+      <label for="newsletter">{{ t('library.filter_series') }}</label>
       <select id="newsletter" name="newsletter">
-        <option value="">Tutte le serie</option>
+        <option value="">{{ t('library.all_series') }}</option>
         {% for nl in all_newsletters %}
         <option value="{{ nl.slug }}" {% if selected_nl == nl.slug %}selected{% endif %}>{{ nl.name }}</option>
         {% endfor %}
@@ -25,38 +25,38 @@
     </div>
     
     <div class="form-group" style="flex: 1;">
-      <label for="status">Stato</label>
+      <label for="status">{{ t('library.filter_status') }}</label>
       <select id="status" name="status">
-        <option value="">Tutti gli stati</option>
-        <option value="done" {% if selected_status == 'done' %}selected{% endif %}>Completati (done)</option>
-        <option value="pending" {% if selected_status == 'pending' %}selected{% endif %}>In attesa (pending)</option>
-        <option value="error" {% if selected_status == 'error' %}selected{% endif %}>Errori (error)</option>
+        <option value="">{{ t('library.all_statuses') }}</option>
+        <option value="done" {% if selected_status == 'done' %}selected{% endif %}>{{ t('library.status_done') }}</option>
+        <option value="pending" {% if selected_status == 'pending' %}selected{% endif %}>{{ t('library.status_pending') }}</option>
+        <option value="error" {% if selected_status == 'error' %}selected{% endif %}>{{ t('library.status_error') }}</option>
       </select>
     </div>
     
     <div class="form-group" style="margin-bottom: 1.25rem;">
-      <button type="submit" class="btn btn-primary">Filtra</button>
-      <a href="/ui/library" class="btn btn-secondary">Reset</a>
+      <button type="submit" class="btn btn-primary">{{ t('common.filter') }}</button>
+      <a href="/ui/library" class="btn btn-secondary">{{ t('common.reset') }}</a>
     </div>
   </form>
 </div>
 
 <div class="card">
   <div class="card-header">
-    <span>Numeri Trovati ({{ issues|length }})</span>
+    <span>{{ t('library.found_count', count=issues|length) }}</span>
   </div>
   
   <div class="table-responsive">
     <table>
       <thead>
         <tr>
-          <th>Copertina</th>
-          <th>Serie</th>
-          <th>Titolo / Oggetto</th>
-          <th>Numero</th>
-          <th>Data Ricezione</th>
-          <th>Stato</th>
-          <th>Azioni</th>
+          <th>{{ t('library.th_cover') }}</th>
+          <th>{{ t('library.th_series') }}</th>
+          <th>{{ t('library.th_title') }}</th>
+          <th>{{ t('library.th_number') }}</th>
+          <th>{{ t('library.th_received') }}</th>
+          <th>{{ t('library.th_status') }}</th>
+          <th>{{ t('library.th_actions') }}</th>
         </tr>
       </thead>
       <tbody>
@@ -84,15 +84,14 @@
               {% if issue.status == 'done' %}
               <a href="/ui/issues/{{ issue.id }}/download" class="btn btn-secondary btn-sm">EPUB</a>
               {% endif %}
-              <a href="/ui/issues/{{ issue.id }}" class="btn btn-secondary btn-sm">Dettagli</a>
+              <a href="/ui/issues/{{ issue.id }}" class="btn btn-secondary btn-sm">{{ t('common.details') }}</a>
             </div>
-
           </td>
         </tr>
         {% else %}
         <tr>
           <td colspan="7" style="text-align: center; color: var(--text-secondary); padding: 2rem;">
-            Nessun numero trovato con i filtri selezionati.
+            {{ t('library.no_issues_found') }}
           </td>
         </tr>
         {% endfor %}

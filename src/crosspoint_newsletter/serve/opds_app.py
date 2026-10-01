@@ -70,7 +70,7 @@ def create_app(
     app = FastAPI(
         title="CrossPoint Newsletter OPDS Server",
         description="OPDS 1.2 catalog and acquisition service for CrossPoint e-ink reader",
-        version="0.1.0",
+        version="0.1.1",
         lifespan=lifespan,
     )
 

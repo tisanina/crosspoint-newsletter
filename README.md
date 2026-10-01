@@ -19,7 +19,7 @@ A self-hosted server that connects to an IMAP mailbox, ingests email newsletters
 - **Procedural Cover Generation**: Automatically generates stylish, readable SVG/PNG book covers with issue numbers, titles, and publication dates.
 - **EPUB 3.0 Packaging**: Assembles clean, validated EPUB 3.0 books embedded with Calibre-compatible series metadata and navigation tables.
 - **Built-in OPDS 1.2 Catalog**: Complete Atom XML catalog featuring navigation by recent issues, publication series, full-text search, and direct EPUB download.
-- **Responsive Web Dashboard**: Clean modern WebUI to manage subscriptions, review incoming issues, configure credentials, and trigger manual ingestion.
+- **Responsive Web Dashboard & Multi-language (i18n)**: Clean modern WebUI supporting both English 🇬🇧 and Italian 🇮🇹 (extensible to additional languages), configurable via navbar switcher or server settings. Manage subscriptions, review incoming issues, configure credentials, and trigger manual ingestion.
 - **Triage Inbox & Discovery**: Automatically detects emails from new or unknown senders and places them in a triage queue for one-click approval or dismissal.
 - **Sender Blacklist**: Drop unwanted spam or notifications before processing.
 - **Configurable Retention Policies**: Set automated rolling cleanup policies based on issue count or maximum retention age per newsletter series.

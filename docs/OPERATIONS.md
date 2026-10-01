@@ -50,7 +50,7 @@ Esempio di output:
 {
   "status": "healthy",
   "service": "crosspoint-newsletter",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "uptime_seconds": 3600,
   "newsletters_count": 4,
   "total_issues": 12,
